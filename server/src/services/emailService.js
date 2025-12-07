@@ -1,6 +1,6 @@
 const nodemailer = require("nodemailer");
 const { env } = require("../config/env");
-const logger = require("../logger");
+const { logger } = require("../logger");
 
 let transporter = null;
 

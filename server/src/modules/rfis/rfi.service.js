@@ -6,7 +6,7 @@ const {
   sendRfiResponseEmail,
   sendRfiStatusChangeEmail,
 } = require("../../services/emailService");
-const logger = require("../../logger");
+const { logger } = require("../../logger");
 
 const ensureProjectUser = async (projectId, userId) => {
   if (!userId) return null;
