@@ -24,6 +24,18 @@ export const fetchRfis = createAsyncThunk(
   }
 );
 
+export const createRfi = createAsyncThunk(
+  "rfis/createRfi",
+  async (rfiData, { getState }) => {
+    const { projectId } = getState().rfis;
+    const { data } = await apiClient.post(
+      `/projects/${projectId}/rfis`,
+      rfiData
+    );
+    return data;
+  }
+);
+
 const rfiSlice = createSlice({
   name: "rfis",
   initialState: {
@@ -56,6 +68,10 @@ const rfiSlice = createSlice({
       .addCase(fetchRfis.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.error.message || "Failed to load RFIs";
+      })
+      .addCase(createRfi.fulfilled, (state, action) => {
+        // Optionally add new RFI to list
+        state.items.unshift(action.payload);
       });
   },
 });

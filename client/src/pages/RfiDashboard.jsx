@@ -1,18 +1,25 @@
-import React, { useEffect } from "react";
-import { Row, Col, Statistic, Card, Progress, List, Tag } from "antd";
+import React, { useEffect, useState } from "react";
+import { Row, Col, Statistic, Card, Progress, List, Tag, Button } from "antd";
+import { PlusOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useDispatch, useSelector } from "react-redux";
 import RfiFilters from "../components/RfiFilters";
 import RfiList from "../components/RfiList";
+import RfiCreateModal from "../components/RfiCreateModal";
 import { fetchRfis } from "../features/rfis/rfiSlice";
 
 const RfiDashboard = () => {
   const dispatch = useDispatch();
   const { items, projectId } = useSelector((state) => state.rfis);
+  const [createModalVisible, setCreateModalVisible] = useState(false);
 
   useEffect(() => {
     dispatch(fetchRfis());
   }, [dispatch]);
+
+  const handleCreateSuccess = () => {
+    dispatch(fetchRfis());
+  };
 
   const openCount = items.filter((rfi) => rfi.status === "open").length;
   const answeredCount = items.filter((rfi) => rfi.status === "answered").length;
@@ -92,6 +99,14 @@ const RfiDashboard = () => {
             field teams.
           </p>
           <div className="hero-cta-row">
+            <Button
+              type="primary"
+              size="large"
+              icon={<PlusOutlined />}
+              onClick={() => setCreateModalVisible(true)}
+            >
+              Create RFI
+            </Button>
             <span className="hero-chip hero-chip--badge">
               Package #{projectId || "—"}
             </span>
@@ -257,6 +272,12 @@ const RfiDashboard = () => {
           </Card>
         </Col>
       </Row>
+
+      <RfiCreateModal
+        visible={createModalVisible}
+        onClose={() => setCreateModalVisible(false)}
+        onSuccess={handleCreateSuccess}
+      />
     </div>
   );
 };

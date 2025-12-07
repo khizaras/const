@@ -1,0 +1,5 @@
+# uploads/
+# This directory stores uploaded files locally
+# In production, use S3 or similar cloud storage
+
+.gitkeep

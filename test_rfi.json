@@ -1,0 +1,8 @@
+{
+  "title": "Test RFI Creation",
+  "question": "This is a test question to verify RFI creation works",
+  "priority": "medium",
+  "discipline": "Architecture",
+  "specSection": "03300",
+  "location": "Building A - Level 1"
+}

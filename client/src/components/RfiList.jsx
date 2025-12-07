@@ -1,12 +1,20 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Card, Table, Tag, Typography } from "antd";
 import dayjs from "dayjs";
 import { useSelector } from "react-redux";
+import RfiDetailModal from "./RfiDetailModal";
 
 const { Text } = Typography;
 
 const RfiList = () => {
   const { items, status, meta } = useSelector((state) => state.rfis);
+  const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [selectedRfiId, setSelectedRfiId] = useState(null);
+
+  const handleRowClick = (record) => {
+    setSelectedRfiId(record.id);
+    setDetailModalVisible(true);
+  };
 
   const columns = useMemo(
     () => [
@@ -97,25 +105,37 @@ const RfiList = () => {
   );
 
   return (
-    <Card
-      className="panel-card table-card"
-      bordered={false}
-      title="RFI Register"
-      extra={
-        <span style={{ color: "var(--brand-muted)" }}>
-          {meta.total} active records
-        </span>
-      }
-    >
-      <Table
-        rowKey={(record) => record.id}
-        columns={columns}
-        dataSource={items}
-        loading={status === "loading"}
-        pagination={false}
+    <>
+      <Card
+        className="panel-card table-card"
         bordered={false}
+        title="RFI Register"
+        extra={
+          <span style={{ color: "var(--brand-muted)" }}>
+            {meta.total} active records
+          </span>
+        }
+      >
+        <Table
+          rowKey={(record) => record.id}
+          columns={columns}
+          dataSource={items}
+          loading={status === "loading"}
+          pagination={false}
+          bordered={false}
+          onRow={(record) => ({
+            onClick: () => handleRowClick(record),
+            style: { cursor: "pointer" },
+          })}
+        />
+      </Card>
+
+      <RfiDetailModal
+        visible={detailModalVisible}
+        rfiId={selectedRfiId}
+        onClose={() => setDetailModalVisible(false)}
       />
-    </Card>
+    </>
   );
 };
 
