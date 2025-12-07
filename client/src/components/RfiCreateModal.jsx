@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
-  Modal,
+  Drawer,
   Form,
   Input,
   Select,
@@ -9,8 +9,11 @@ import {
   Upload,
   message,
   Space,
+  Divider,
+  Typography,
+  Progress,
 } from "antd";
-import { UploadOutlined, PlusOutlined } from "@ant-design/icons";
+import { UploadOutlined, PlusOutlined, CloseOutlined } from "@ant-design/icons";
 import { useDispatch, useSelector } from "react-redux";
 import { createRfi } from "../features/rfis/rfiSlice";
 import apiClient from "../services/apiClient";
@@ -18,12 +21,14 @@ import dayjs from "dayjs";
 
 const { TextArea } = Input;
 const { Option } = Select;
+const { Title } = Typography;
 
 const RfiCreateModal = ({ visible, onClose, onSuccess }) => {
   const dispatch = useDispatch();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [fileList, setFileList] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState({});
   const [projectUsers, setProjectUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const projectId = useSelector((state) => state.rfis.projectId);
@@ -69,6 +74,7 @@ const RfiCreateModal = ({ visible, onClose, onSuccess }) => {
       if (fileList.length > 0) {
         for (const file of fileList) {
           const fileToUpload = file.originFileObj || file;
+          const fileUid = file.uid;
 
           // Upload file first
           const formData = new FormData();
@@ -79,6 +85,15 @@ const RfiCreateModal = ({ visible, onClose, onSuccess }) => {
             formData,
             {
               headers: { "Content-Type": "multipart/form-data" },
+              onUploadProgress: (progressEvent) => {
+                const percentCompleted = Math.round(
+                  (progressEvent.loaded * 100) / progressEvent.total
+                );
+                setUploadProgress((prev) => ({
+                  ...prev,
+                  [fileUid]: percentCompleted,
+                }));
+              },
             }
           );
 
@@ -103,6 +118,7 @@ const RfiCreateModal = ({ visible, onClose, onSuccess }) => {
       message.success("RFI created successfully");
       form.resetFields();
       setFileList([]);
+      setUploadProgress({});
       onSuccess && onSuccess();
       onClose();
     } catch (error) {
@@ -115,6 +131,7 @@ const RfiCreateModal = ({ visible, onClose, onSuccess }) => {
   const handleCancel = () => {
     form.resetFields();
     setFileList([]);
+    setUploadProgress({});
     onClose();
   };
 
@@ -124,6 +141,12 @@ const RfiCreateModal = ({ visible, onClose, onSuccess }) => {
       const newFileList = fileList.slice();
       newFileList.splice(index, 1);
       setFileList(newFileList);
+      // Remove progress for removed file
+      setUploadProgress((prev) => {
+        const updated = { ...prev };
+        delete updated[file.uid];
+        return updated;
+      });
     },
     beforeUpload: (file) => {
       setFileList([...fileList, file]);
@@ -131,155 +154,215 @@ const RfiCreateModal = ({ visible, onClose, onSuccess }) => {
     },
     fileList,
     multiple: true,
+    itemRender: (originNode, file) => {
+      const progress = uploadProgress[file.uid];
+      if (progress && progress < 100) {
+        return (
+          <div style={{ marginBottom: 8 }}>
+            {originNode}
+            <Progress percent={progress} size="small" status="active" />
+          </div>
+        );
+      }
+      return originNode;
+    },
   };
 
   return (
-    <Modal
-      title="Create New RFI"
+    <Drawer
+      title={
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Title level={3} style={{ margin: 0 }}>
+            Create New RFI
+          </Title>
+        </div>
+      }
       open={visible}
-      onCancel={handleCancel}
-      width={700}
+      onClose={handleCancel}
+      width="100%"
+      height="100vh"
+      placement="right"
+      bodyStyle={{
+        paddingTop: 24,
+        background: "#f5f5f5",
+      }}
+      headerStyle={{
+        borderBottom: "1px solid #e8e8e8",
+        padding: "20px 24px",
+      }}
+      closeIcon={<CloseOutlined style={{ fontSize: 18 }} />}
       footer={null}
+      destroyOnClose
     >
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={handleSubmit}
-        initialValues={{
-          priority: "medium",
+      <div
+        style={{
+          maxWidth: 900,
+          margin: "0 auto",
+          background: "white",
+          padding: "32px",
+          borderRadius: "8px",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
         }}
       >
-        <Form.Item
-          label="RFI Title"
-          name="title"
-          rules={[{ required: true, message: "Please enter RFI title" }]}
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleSubmit}
+          initialValues={{
+            priority: "medium",
+          }}
         >
-          <Input placeholder="Brief summary of the request" />
-        </Form.Item>
-
-        <Form.Item
-          label="Question / Description"
-          name="question"
-          rules={[{ required: true, message: "Please enter RFI question" }]}
-        >
-          <TextArea
-            rows={4}
-            placeholder="Detailed description of the information requested"
-          />
-        </Form.Item>
-
-        <Space style={{ width: "100%", marginBottom: 16 }} size="large">
           <Form.Item
-            label="Priority"
-            name="priority"
-            style={{ marginBottom: 0, minWidth: 150 }}
+            label="RFI Title"
+            name="title"
+            rules={[{ required: true, message: "Please enter RFI title" }]}
           >
-            <Select>
-              <Option value="low">Low</Option>
-              <Option value="medium">Medium</Option>
-              <Option value="high">High</Option>
-              <Option value="urgent">Urgent</Option>
-            </Select>
+            <Input size="large" placeholder="Brief summary of the request" />
           </Form.Item>
 
           <Form.Item
-            label="Due Date"
-            name="dueDate"
-            style={{ marginBottom: 0, minWidth: 200 }}
+            label="Question / Description"
+            name="question"
+            rules={[{ required: true, message: "Please enter RFI question" }]}
           >
-            <DatePicker
-              style={{ width: "100%" }}
-              disabledDate={(current) =>
-                current && current < dayjs().startOf("day")
-              }
+            <TextArea
+              size="large"
+              rows={6}
+              placeholder="Detailed description of the information requested"
             />
           </Form.Item>
-        </Space>
 
-        <Space style={{ width: "100%", marginBottom: 16 }} size="large">
-          <Form.Item
-            label="Discipline"
-            name="discipline"
-            style={{ marginBottom: 0, minWidth: 150 }}
-          >
-            <Select placeholder="Select discipline" allowClear>
-              <Option value="Architecture">Architecture</Option>
-              <Option value="Structural">Structural</Option>
-              <Option value="MEP">MEP</Option>
-              <Option value="Civil">Civil</Option>
-              <Option value="Landscape">Landscape</Option>
-            </Select>
-          </Form.Item>
+          <Divider />
 
-          <Form.Item
-            label="Spec Section"
-            name="specSection"
-            style={{ marginBottom: 0, minWidth: 150 }}
-          >
-            <Input placeholder="e.g., 03300" />
-          </Form.Item>
-        </Space>
-
-        <Space style={{ width: "100%", marginBottom: 16 }} size="large">
-          <Form.Item
-            label="Location"
-            name="location"
-            style={{ marginBottom: 0, flex: 1 }}
-          >
-            <Input placeholder="Building, floor, or area" />
-          </Form.Item>
-
-          <Form.Item
-            label="Assign To"
-            name="assignedToUserId"
-            style={{ marginBottom: 0, minWidth: 200 }}
-          >
-            <Select
-              placeholder="Select user"
-              allowClear
-              loading={loadingUsers}
-              showSearch
-              filterOption={(input, option) =>
-                option.children.toLowerCase().includes(input.toLowerCase())
-              }
+          <Space style={{ width: "100%", marginBottom: 16 }} size="large">
+            <Form.Item
+              label="Priority"
+              name="priority"
+              style={{ marginBottom: 0, minWidth: 150 }}
             >
-              {projectUsers.map((user) => (
-                <Option key={user.id} value={user.id}>
-                  {user.first_name} {user.last_name}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-        </Space>
+              <Select size="large">
+                <Option value="low">Low</Option>
+                <Option value="medium">Medium</Option>
+                <Option value="high">High</Option>
+                <Option value="urgent">Urgent</Option>
+              </Select>
+            </Form.Item>
 
-        <Form.Item label="Attachments">
-          <Upload {...uploadProps}>
-            <Button icon={<UploadOutlined />}>Select Files</Button>
-          </Upload>
-          <div
-            style={{ color: "var(--brand-muted)", fontSize: 12, marginTop: 8 }}
-          >
-            Supported: Images, PDFs, DWG, Office docs (Max 50MB)
-          </div>
-        </Form.Item>
-
-        <Form.Item style={{ marginBottom: 0, marginTop: 24 }}>
-          <Space>
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={loading}
-              size="large"
+            <Form.Item
+              label="Due Date"
+              name="dueDate"
+              style={{ marginBottom: 0, minWidth: 200 }}
             >
-              <PlusOutlined /> Create RFI
-            </Button>
-            <Button onClick={handleCancel} size="large">
-              Cancel
-            </Button>
+              <DatePicker
+                size="large"
+                style={{ width: "100%" }}
+                disabledDate={(current) =>
+                  current && current < dayjs().startOf("day")
+                }
+              />
+            </Form.Item>
           </Space>
-        </Form.Item>
-      </Form>
-    </Modal>
+
+          <Space style={{ width: "100%", marginBottom: 16 }} size="large">
+            <Form.Item
+              label="Discipline"
+              name="discipline"
+              style={{ marginBottom: 0, minWidth: 150 }}
+            >
+              <Select size="large" placeholder="Select discipline" allowClear>
+                <Option value="Architecture">Architecture</Option>
+                <Option value="Structural">Structural</Option>
+                <Option value="MEP">MEP</Option>
+                <Option value="Civil">Civil</Option>
+                <Option value="Landscape">Landscape</Option>
+              </Select>
+            </Form.Item>
+
+            <Form.Item
+              label="Spec Section"
+              name="specSection"
+              style={{ marginBottom: 0, minWidth: 150 }}
+            >
+              <Input size="large" placeholder="e.g., 03300" />
+            </Form.Item>
+          </Space>
+
+          <Space style={{ width: "100%", marginBottom: 16 }} size="large">
+            <Form.Item
+              label="Location"
+              name="location"
+              style={{ marginBottom: 0, flex: 1 }}
+            >
+              <Input size="large" placeholder="Building, floor, or area" />
+            </Form.Item>
+
+            <Form.Item
+              label="Assign To"
+              name="assignedToUserId"
+              style={{ marginBottom: 0, minWidth: 200 }}
+            >
+              <Select
+                size="large"
+                placeholder="Select user"
+                allowClear
+                loading={loadingUsers}
+                showSearch
+                filterOption={(input, option) =>
+                  option.children.toLowerCase().includes(input.toLowerCase())
+                }
+              >
+                {projectUsers.map((user) => (
+                  <Option key={user.id} value={user.id}>
+                    {user.first_name} {user.last_name}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+          </Space>
+
+          <Divider />
+
+          <Form.Item label="Attachments">
+            <Upload {...uploadProps}>
+              <Button icon={<UploadOutlined />} size="large">
+                Select Files
+              </Button>
+            </Upload>
+            <div
+              style={{
+                color: "var(--brand-muted)",
+                fontSize: 12,
+                marginTop: 8,
+              }}
+            >
+              Supported: Images, PDFs, DWG, Office docs (Max 50MB)
+            </div>
+          </Form.Item>
+
+          <Form.Item style={{ marginBottom: 0, marginTop: 24 }}>
+            <Space>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={loading}
+                size="large"
+              >
+                <PlusOutlined /> Create RFI
+              </Button>
+              <Button onClick={handleCancel} size="large">
+                Cancel
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </div>
+    </Drawer>
   );
 };
 
