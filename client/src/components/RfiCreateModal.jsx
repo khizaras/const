@@ -68,27 +68,27 @@ const RfiCreateModal = ({ visible, onClose, onSuccess }) => {
       // Upload files if any
       if (fileList.length > 0) {
         for (const file of fileList) {
-          if (file.originFileObj) {
-            // Upload file first
-            const formData = new FormData();
-            formData.append("file", file.originFileObj);
+          const fileToUpload = file.originFileObj || file;
+          
+          // Upload file first
+          const formData = new FormData();
+          formData.append("file", fileToUpload);
 
-            const uploadResponse = await apiClient.post(
-              `/projects/${projectId}/files`,
-              formData,
-              {
-                headers: { "Content-Type": "multipart/form-data" },
-              }
-            );
+          const uploadResponse = await apiClient.post(
+            `/projects/${projectId}/files`,
+            formData,
+            {
+              headers: { "Content-Type": "multipart/form-data" },
+            }
+          );
 
-            // Attach file to RFI
-            await apiClient.post(
-              `/projects/${projectId}/rfis/${rfiId}/attachments`,
-              {
-                fileId: uploadResponse.data.id,
-              }
-            );
-          }
+          // Attach file to RFI
+          await apiClient.post(
+            `/projects/${projectId}/rfis/${rfiId}/attachments`,
+            {
+              fileId: uploadResponse.data.id,
+            }
+          );
         }
       }
 
