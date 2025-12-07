@@ -23,7 +23,7 @@ const upload = asyncHandler(async (req, res) => {
     originalName: req.file.originalname,
     mimetype: req.file.mimetype,
     uploadedByUserId: req.user.id,
-    organizationId: req.user.organization_id,
+    organizationId: req.user.organizationId,
     projectId: req.project.id,
   });
 

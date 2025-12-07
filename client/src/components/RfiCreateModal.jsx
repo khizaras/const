@@ -69,7 +69,7 @@ const RfiCreateModal = ({ visible, onClose, onSuccess }) => {
       if (fileList.length > 0) {
         for (const file of fileList) {
           const fileToUpload = file.originFileObj || file;
-          
+
           // Upload file first
           const formData = new FormData();
           formData.append("file", fileToUpload);
@@ -82,11 +82,19 @@ const RfiCreateModal = ({ visible, onClose, onSuccess }) => {
             }
           );
 
+          console.log("Upload response:", uploadResponse.data);
+          const fileId = uploadResponse.data?.id || uploadResponse.data;
+
+          if (!fileId) {
+            console.error("No file ID in response:", uploadResponse.data);
+            throw new Error("File upload failed - no file ID returned");
+          }
+
           // Attach file to RFI
           await apiClient.post(
             `/projects/${projectId}/rfis/${rfiId}/attachments`,
             {
-              fileId: uploadResponse.data.id,
+              fileId: typeof fileId === "object" ? fileId.id : fileId,
             }
           );
         }
