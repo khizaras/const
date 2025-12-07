@@ -117,7 +117,9 @@ const loadRfiDetail = async (projectId, rfiId) => {
   }
 
   const [responses] = await pool.execute(
-    `SELECT rr.*, responder.first_name, responder.last_name
+    `SELECT rr.*, 
+            responder.first_name AS responded_by_first_name, 
+            responder.last_name AS responded_by_last_name
      FROM rfi_responses rr
      LEFT JOIN users responder ON responder.id = rr.responded_by_user_id
      WHERE rr.rfi_id = ?
@@ -134,10 +136,12 @@ const loadRfiDetail = async (projectId, rfiId) => {
   );
 
   const [attachments] = await pool.execute(
-    `SELECT a.id, a.file_id, f.original_name, f.mime_type, f.size_bytes
+    `SELECT a.id, a.file_id, a.created_at AS attached_at,
+            f.original_name, f.mime_type, f.size_bytes
      FROM attachments a
      JOIN files f ON f.id = a.file_id
-     WHERE a.entity_type = 'rfi' AND a.entity_id = ?`,
+     WHERE a.entity_type = 'rfi' AND a.entity_id = ?
+     ORDER BY a.created_at DESC`,
     [rfiId]
   );
 
