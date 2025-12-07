@@ -1,5 +1,10 @@
 import React, { useMemo, useState } from "react";
-import { Card, Table, Tag, Typography } from "antd";
+import { Card, Table, Tag, Typography, Tooltip } from "antd";
+import {
+  ClockCircleOutlined,
+  ExclamationCircleOutlined,
+  WarningOutlined,
+} from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useSelector } from "react-redux";
 import RfiDetailModal from "./RfiDetailModal";
@@ -24,7 +29,23 @@ const RfiList = () => {
         key: "number",
         width: 90,
         render: (_, record) => (
-          <span className="rfi-number-pill">RFI-{record.number}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span className="rfi-number-pill">RFI-{record.number}</span>
+            {record.days_overdue > 0 && (
+              <Tooltip title={`${record.days_overdue} days overdue`}>
+                <ExclamationCircleOutlined
+                  style={{ color: "#ff4d4f", fontSize: 16 }}
+                />
+              </Tooltip>
+            )}
+            {record.days_until_due !== null &&
+              record.days_until_due <= 3 &&
+              record.days_until_due >= 0 && (
+                <Tooltip title={`Due in ${record.days_until_due} days`}>
+                  <WarningOutlined style={{ color: "#faad14", fontSize: 16 }} />
+                </Tooltip>
+              )}
+          </div>
         ),
       },
       {
@@ -85,12 +106,34 @@ const RfiList = () => {
         key: "due_date",
         render: (due, record) => {
           if (!due) return "—";
-          const days = dayjs(due).diff(dayjs(), "day");
-          const atRisk = days <= 3 && record.status !== "closed";
+          const isOverdue = record.days_overdue > 0;
+          const isAtRisk =
+            record.days_until_due !== null &&
+            record.days_until_due <= 3 &&
+            record.days_until_due >= 0;
           return (
-            <span style={{ color: atRisk ? "var(--brand-danger)" : "inherit" }}>
-              {dayjs(due).format("DD MMM")}
-            </span>
+            <Tooltip
+              title={
+                isOverdue
+                  ? `${record.days_overdue} days overdue`
+                  : isAtRisk
+                  ? `Due in ${record.days_until_due} days`
+                  : `${record.days_open} days open`
+              }
+            >
+              <span
+                style={{
+                  color: isOverdue
+                    ? "#ff4d4f"
+                    : isAtRisk
+                    ? "#faad14"
+                    : "inherit",
+                  fontWeight: isOverdue || isAtRisk ? 600 : 400,
+                }}
+              >
+                {dayjs(due).format("DD MMM")}
+              </span>
+            </Tooltip>
           );
         },
       },

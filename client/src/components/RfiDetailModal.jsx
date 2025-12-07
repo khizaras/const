@@ -16,6 +16,8 @@ import {
   Typography,
   Card,
   Image,
+  Select,
+  Popconfirm,
 } from "antd";
 import {
   DownloadOutlined,
@@ -27,6 +29,8 @@ import {
   EyeOutlined,
   FilePdfOutlined,
   FileImageOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import apiClient from "../services/apiClient";
@@ -84,6 +88,18 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
       message.error("Failed to add response");
     } finally {
       setResponding(false);
+    }
+  };
+
+  const handleStatusChange = async (newStatus) => {
+    try {
+      await apiClient.patch(`/projects/${projectId}/rfis/${rfiId}`, {
+        status: newStatus,
+      });
+      message.success(`RFI status changed to ${newStatus}`);
+      loadRfiDetail();
+    } catch (error) {
+      message.error("Failed to update RFI status");
     }
   };
 
@@ -211,244 +227,318 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
 
   return (
     <>
-    <Drawer
-      title={
+      <Drawer
+        title={
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              width: "100%",
+            }}
+          >
+            <Space>
+              <Title level={3} style={{ margin: 0 }}>
+                RFI-{rfi.number}
+              </Title>
+              <Tag color={getStatusColor(rfi.status)}>{rfi.status}</Tag>
+              <Tag color={getPriorityColor(rfi.priority)}>{rfi.priority}</Tag>
+            </Space>
+            <Space>
+              {rfi.status === "open" && (
+                <Popconfirm
+                  title="Mark as Answered?"
+                  description="This will change the status to 'answered'."
+                  onConfirm={() => handleStatusChange("answered")}
+                  okText="Yes"
+                  cancelText="No"
+                >
+                  <Button
+                    type="primary"
+                    icon={<CheckCircleOutlined />}
+                    size="small"
+                  >
+                    Mark Answered
+                  </Button>
+                </Popconfirm>
+              )}
+              {rfi.status === "answered" && (
+                <Popconfirm
+                  title="Close this RFI?"
+                  description="This will mark the RFI as closed."
+                  onConfirm={() => handleStatusChange("closed")}
+                  okText="Yes"
+                  cancelText="No"
+                >
+                  <Button
+                    type="primary"
+                    icon={<CloseCircleOutlined />}
+                    size="small"
+                  >
+                    Close RFI
+                  </Button>
+                </Popconfirm>
+              )}
+              {rfi.status === "closed" && (
+                <Button
+                  type="default"
+                  size="small"
+                  onClick={() => handleStatusChange("open")}
+                >
+                  Reopen
+                </Button>
+              )}
+            </Space>
+          </div>
+        }
+        open={visible}
+        onClose={onClose}
+        width="100%"
+        height="100vh"
+        placement="right"
+        closeIcon={<CloseOutlined style={{ fontSize: 18 }} />}
+        bodyStyle={{
+          paddingTop: 24,
+          background: "#f5f5f5",
+        }}
+        headerStyle={{
+          borderBottom: "1px solid #e8e8e8",
+          padding: "20px 24px",
+        }}
+        footer={null}
+        destroyOnClose
+      >
         <div
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
+            maxWidth: 900,
+            margin: "0 auto",
+            background: "white",
+            padding: "32px",
+            borderRadius: "8px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
           }}
         >
-          <Space>
-            <Title level={3} style={{ margin: 0 }}>
-              RFI-{rfi.number}
-            </Title>
-            <Tag color={getStatusColor(rfi.status)}>{rfi.status}</Tag>
-            <Tag color={getPriorityColor(rfi.priority)}>{rfi.priority}</Tag>
-          </Space>
-        </div>
-      }
-      open={visible}
-      onClose={onClose}
-      width="100%"
-      height="100vh"
-      placement="right"
-      closeIcon={<CloseOutlined style={{ fontSize: 18 }} />}
-      bodyStyle={{
-        paddingTop: 24,
-        background: "#f5f5f5",
-      }}
-      headerStyle={{
-        borderBottom: "1px solid #e8e8e8",
-        padding: "20px 24px",
-      }}
-      footer={null}
-      destroyOnClose
-    >
-      <div
-        style={{
-          maxWidth: 900,
-          margin: "0 auto",
-          background: "white",
-          padding: "32px",
-          borderRadius: "8px",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-        }}
-      >
-        <div style={{ maxHeight: "70vh", overflowY: "auto" }}>
-          <Title level={4}>{rfi.title}</Title>
+          <div style={{ maxHeight: "70vh", overflowY: "auto" }}>
+            <Title level={4}>{rfi.title}</Title>
 
-          <Descriptions
-            column={2}
-            bordered
-            size="small"
-            style={{ marginBottom: 24 }}
-          >
-            <Descriptions.Item label="Status">
-              <Tag color={getStatusColor(rfi.status)}>{rfi.status}</Tag>
-            </Descriptions.Item>
-            <Descriptions.Item label="Priority">
-              <Tag color={getPriorityColor(rfi.priority)}>{rfi.priority}</Tag>
-            </Descriptions.Item>
-            <Descriptions.Item label="Created By">
-              {rfi.created_by_first_name} {rfi.created_by_last_name}
-            </Descriptions.Item>
-            <Descriptions.Item label="Created">
-              {dayjs(rfi.created_at).format("MMM D, YYYY h:mm A")}
-            </Descriptions.Item>
-            {rfi.assigned_to_first_name && (
-              <Descriptions.Item label="Assigned To">
-                {rfi.assigned_to_first_name} {rfi.assigned_to_last_name}
-              </Descriptions.Item>
-            )}
-            {rfi.due_date && (
-              <Descriptions.Item label="Due Date">
-                {dayjs(rfi.due_date).format("MMM D, YYYY")}
-              </Descriptions.Item>
-            )}
-            {rfi.discipline && (
-              <Descriptions.Item label="Discipline">
-                {rfi.discipline}
-              </Descriptions.Item>
-            )}
-            {rfi.spec_section && (
-              <Descriptions.Item label="Spec Section">
-                {rfi.spec_section}
-              </Descriptions.Item>
-            )}
-            {rfi.location && (
-              <Descriptions.Item label="Location" span={2}>
-                {rfi.location}
-              </Descriptions.Item>
-            )}
-          </Descriptions>
-
-          <Card title="Question" size="small" style={{ marginBottom: 16 }}>
-            <Text>{rfi.question}</Text>
-          </Card>
-
-          {rfi.attachments && rfi.attachments.length > 0 && (
-            <Card
-              title={
-                <Space>
-                  <PaperClipOutlined />
-                  Attachments ({rfi.attachments.length})
-                </Space>
-              }
+            <Descriptions
+              column={2}
+              bordered
               size="small"
-              style={{ marginBottom: 16 }}
+              style={{ marginBottom: 24 }}
             >
-              <List
-                dataSource={rfi.attachments}
-                renderItem={(item) => (
-                  <List.Item
-                    actions={[
-                      (isImageFile(item.mimetype) ||
-                        isPdfFile(item.mimetype)) && (
+              <Descriptions.Item label="Status">
+                <Tag color={getStatusColor(rfi.status)}>{rfi.status}</Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Priority">
+                <Tag color={getPriorityColor(rfi.priority)}>{rfi.priority}</Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Created By">
+                {rfi.created_by_first_name} {rfi.created_by_last_name}
+              </Descriptions.Item>
+              <Descriptions.Item label="Created">
+                {dayjs(rfi.created_at).format("MMM D, YYYY h:mm A")}
+              </Descriptions.Item>
+              <Descriptions.Item label="Age">
+                <Space>
+                  <Text>{rfi.days_open} days open</Text>
+                  {rfi.days_overdue > 0 && (
+                    <Tag color="error">{rfi.days_overdue} days overdue</Tag>
+                  )}
+                  {rfi.days_until_due !== null &&
+                    rfi.days_until_due <= 3 &&
+                    rfi.days_until_due >= 0 && (
+                      <Tag color="warning">
+                        Due in {rfi.days_until_due} days
+                      </Tag>
+                    )}
+                </Space>
+              </Descriptions.Item>
+              {rfi.assigned_to_first_name && (
+                <Descriptions.Item label="Assigned To">
+                  {rfi.assigned_to_first_name} {rfi.assigned_to_last_name}
+                </Descriptions.Item>
+              )}
+              {rfi.due_date && (
+                <Descriptions.Item label="Due Date">
+                  <span
+                    style={{
+                      color: rfi.days_overdue > 0 ? "#ff4d4f" : "inherit",
+                      fontWeight: rfi.days_overdue > 0 ? 600 : 400,
+                    }}
+                  >
+                    {dayjs(rfi.due_date).format("MMM D, YYYY")}
+                  </span>
+                </Descriptions.Item>
+              )}
+              {rfi.discipline && (
+                <Descriptions.Item label="Discipline">
+                  {rfi.discipline}
+                </Descriptions.Item>
+              )}
+              {rfi.spec_section && (
+                <Descriptions.Item label="Spec Section">
+                  {rfi.spec_section}
+                </Descriptions.Item>
+              )}
+              {rfi.location && (
+                <Descriptions.Item label="Location" span={2}>
+                  {rfi.location}
+                </Descriptions.Item>
+              )}
+            </Descriptions>
+
+            <Card title="Question" size="small" style={{ marginBottom: 16 }}>
+              <Text>{rfi.question}</Text>
+            </Card>
+
+            {rfi.attachments && rfi.attachments.length > 0 && (
+              <Card
+                title={
+                  <Space>
+                    <PaperClipOutlined />
+                    Attachments ({rfi.attachments.length})
+                  </Space>
+                }
+                size="small"
+                style={{ marginBottom: 16 }}
+              >
+                <List
+                  dataSource={rfi.attachments}
+                  renderItem={(item) => (
+                    <List.Item
+                      actions={[
+                        (isImageFile(item.mimetype) ||
+                          isPdfFile(item.mimetype)) && (
+                          <Button
+                            type="link"
+                            icon={<EyeOutlined />}
+                            onClick={() =>
+                              handlePreview(
+                                item.file_id,
+                                item.original_name,
+                                item.mimetype
+                              )
+                            }
+                          >
+                            Preview
+                          </Button>
+                        ),
                         <Button
                           type="link"
-                          icon={<EyeOutlined />}
+                          icon={<DownloadOutlined />}
                           onClick={() =>
-                            handlePreview(
-                              item.file_id,
-                              item.original_name,
-                              item.mimetype
-                            )
+                            handleDownloadFile(item.file_id, item.original_name)
                           }
                         >
-                          Preview
-                        </Button>
-                      ),
-                      <Button
-                        type="link"
-                        icon={<DownloadOutlined />}
-                        onClick={() =>
-                          handleDownloadFile(item.file_id, item.original_name)
+                          Download
+                        </Button>,
+                      ].filter(Boolean)}
+                    >
+                      <List.Item.Meta
+                        avatar={<Avatar icon={getFileIcon(item.mimetype)} />}
+                        title={item.original_name}
+                        description={`${(item.size_bytes / 1024).toFixed(
+                          1
+                        )} KB • ${dayjs(item.attached_at).format(
+                          "MMM D, YYYY"
+                        )}`}
+                      />
+                    </List.Item>
+                  )}
+                />
+              </Card>
+            )}
+
+            {rfi.responses && rfi.responses.length > 0 && (
+              <Card
+                title={`Responses (${rfi.responses.length})`}
+                size="small"
+                style={{ marginBottom: 16 }}
+              >
+                <List
+                  dataSource={rfi.responses}
+                  renderItem={(item) => (
+                    <List.Item>
+                      <List.Item.Meta
+                        avatar={
+                          <Avatar>
+                            {item.responded_by_first_name?.[0] || "?"}
+                          </Avatar>
                         }
-                      >
-                        Download
-                      </Button>,
-                    ].filter(Boolean)}
-                  >
-                    <List.Item.Meta
-                      avatar={<Avatar icon={getFileIcon(item.mimetype)} />}
-                      title={item.original_name}
-                      description={`${(item.size_bytes / 1024).toFixed(
-                        1
-                      )} KB • ${dayjs(item.attached_at).format("MMM D, YYYY")}`}
-                    />
-                  </List.Item>
-                )}
-              />
-            </Card>
-          )}
-
-          {rfi.responses && rfi.responses.length > 0 && (
-            <Card
-              title={`Responses (${rfi.responses.length})`}
-              size="small"
-              style={{ marginBottom: 16 }}
-            >
-              <List
-                dataSource={rfi.responses}
-                renderItem={(item) => (
-                  <List.Item>
-                    <List.Item.Meta
-                      avatar={
-                        <Avatar>
-                          {item.responded_by_first_name?.[0] || "?"}
-                        </Avatar>
-                      }
-                      title={
-                        <Space>
-                          <Text strong>
-                            {item.responded_by_first_name}{" "}
-                            {item.responded_by_last_name}
-                          </Text>
-                          {item.is_official && <Tag color="gold">Official</Tag>}
-                          <Text type="secondary" style={{ fontSize: 12 }}>
-                            {dayjs(item.created_at).format(
-                              "MMM D, YYYY h:mm A"
+                        title={
+                          <Space>
+                            <Text strong>
+                              {item.responded_by_first_name}{" "}
+                              {item.responded_by_last_name}
+                            </Text>
+                            {item.is_official && (
+                              <Tag color="gold">Official</Tag>
                             )}
-                          </Text>
-                        </Space>
-                      }
-                      description={
-                        <div style={{ marginTop: 8 }}>{item.response_text}</div>
-                      }
-                    />
-                  </List.Item>
-                )}
+                            <Text type="secondary" style={{ fontSize: 12 }}>
+                              {dayjs(item.created_at).format(
+                                "MMM D, YYYY h:mm A"
+                              )}
+                            </Text>
+                          </Space>
+                        }
+                        description={
+                          <div style={{ marginTop: 8 }}>
+                            {item.response_text}
+                          </div>
+                        }
+                      />
+                    </List.Item>
+                  )}
+                />
+              </Card>
+            )}
+
+            <Card title="Add Response" size="small">
+              <TextArea
+                rows={3}
+                value={responseText}
+                onChange={(e) => setResponseText(e.target.value)}
+                placeholder="Enter your response..."
+                style={{ marginBottom: 12 }}
               />
+              <Button
+                type="primary"
+                icon={<SendOutlined />}
+                onClick={handleAddResponse}
+                loading={responding}
+                size="large"
+              >
+                Send Response
+              </Button>
             </Card>
-          )}
 
-          <Card title="Add Response" size="small">
-            <TextArea
-              rows={3}
-              value={responseText}
-              onChange={(e) => setResponseText(e.target.value)}
-              placeholder="Enter your response..."
-              style={{ marginBottom: 12 }}
-            />
-            <Button
-              type="primary"
-              icon={<SendOutlined />}
-              onClick={handleAddResponse}
-              loading={responding}
-              size="large"
-            >
-              Send Response
-            </Button>
-          </Card>
-
-          <div style={{ marginTop: 24, textAlign: "center" }}>
-            <Button onClick={onClose} size="large">
-              Close
-            </Button>
+            <div style={{ marginTop: 24, textAlign: "center" }}>
+              <Button onClick={onClose} size="large">
+                Close
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
-    </Drawer>
+      </Drawer>
 
-    {/* Image Preview Modal */}
-    <Image
-      width={0}
-      style={{ display: "none" }}
-      src={previewImage}
-      preview={{
-        visible: previewVisible,
-        src: previewImage,
-        onVisibleChange: (visible) => {
-          setPreviewVisible(visible);
-          if (!visible) {
-            window.URL.revokeObjectURL(previewImage);
-          }
-        },
-      }}
-    />
-  </>
+      {/* Image Preview Modal */}
+      <Image
+        width={0}
+        style={{ display: "none" }}
+        src={previewImage}
+        preview={{
+          visible: previewVisible,
+          src: previewImage,
+          onVisibleChange: (visible) => {
+            setPreviewVisible(visible);
+            if (!visible) {
+              window.URL.revokeObjectURL(previewImage);
+            }
+          },
+        }}
+      />
+    </>
   );
 };
 

@@ -68,7 +68,18 @@ const listRfis = async (projectId, filters) => {
             assigned.first_name AS assigned_to_first_name,
             assigned.last_name AS assigned_to_last_name,
             bic.first_name AS ball_in_court_first_name,
-            bic.last_name AS ball_in_court_last_name
+            bic.last_name AS ball_in_court_last_name,
+            DATEDIFF(NOW(), r.created_at) AS days_open,
+            CASE 
+              WHEN r.due_date IS NOT NULL AND r.due_date < CURDATE() 
+              THEN DATEDIFF(CURDATE(), r.due_date)
+              ELSE 0 
+            END AS days_overdue,
+            CASE 
+              WHEN r.due_date IS NOT NULL AND r.due_date >= CURDATE() 
+              THEN DATEDIFF(r.due_date, CURDATE())
+              ELSE NULL 
+            END AS days_until_due
      FROM rfis r
      LEFT JOIN users creator ON creator.id = r.created_by_user_id
      LEFT JOIN users assigned ON assigned.id = r.assigned_to_user_id
@@ -103,7 +114,18 @@ const loadRfiDetail = async (projectId, rfiId) => {
             assigned.first_name AS assigned_to_first_name,
             assigned.last_name AS assigned_to_last_name,
             bic.first_name AS ball_in_court_first_name,
-            bic.last_name AS ball_in_court_last_name
+            bic.last_name AS ball_in_court_last_name,
+            DATEDIFF(NOW(), r.created_at) AS days_open,
+            CASE 
+              WHEN r.due_date IS NOT NULL AND r.due_date < CURDATE() 
+              THEN DATEDIFF(CURDATE(), r.due_date)
+              ELSE 0 
+            END AS days_overdue,
+            CASE 
+              WHEN r.due_date IS NOT NULL AND r.due_date >= CURDATE() 
+              THEN DATEDIFF(r.due_date, CURDATE())
+              ELSE NULL 
+            END AS days_until_due
      FROM rfis r
      LEFT JOIN users creator ON creator.id = r.created_by_user_id
      LEFT JOIN users assigned ON assigned.id = r.assigned_to_user_id
