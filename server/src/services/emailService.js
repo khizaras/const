@@ -6,7 +6,9 @@ let transporter = null;
 
 const initializeTransporter = () => {
   if (!env.EMAIL_USER || !env.EMAIL_PASSWORD) {
-    logger.warn("Email credentials not configured. Email notifications will be disabled.");
+    logger.warn(
+      "Email credentials not configured. Email notifications will be disabled."
+    );
     return null;
   }
 
@@ -24,7 +26,11 @@ const initializeTransporter = () => {
     logger.info("Email transporter initialized successfully");
     return transporter;
   } catch (error) {
-    logger.error("Failed to initialize email transporter:", error);
+    logger.error({
+      err: error,
+      message: error.message,
+      code: error.code,
+    }, "Failed to initialize email transporter");
     return null;
   }
 };
@@ -52,12 +58,28 @@ const sendEmail = async ({ to, subject, html, text }) => {
     logger.info(`Email sent successfully: ${info.messageId}`);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    logger.error("Failed to send email:", error);
+    logger.error({
+      err: error,
+      to,
+      subject,
+      message: error.message,
+      code: error.code,
+      command: error.command,
+      response: error.response,
+      responseCode: error.responseCode,
+    }, "Failed to send email");
     return { success: false, error: error.message };
   }
 };
 
-const sendRfiCreatedEmail = async ({ to, rfiNumber, rfiTitle, createdBy, projectName, rfiUrl }) => {
+const sendRfiCreatedEmail = async ({
+  to,
+  rfiNumber,
+  rfiTitle,
+  createdBy,
+  projectName,
+  rfiUrl,
+}) => {
   const subject = `New RFI #${rfiNumber}: ${rfiTitle}`;
   const html = `
     <!DOCTYPE html>
@@ -96,7 +118,14 @@ const sendRfiCreatedEmail = async ({ to, rfiNumber, rfiTitle, createdBy, project
   return sendEmail({ to, subject, html, text });
 };
 
-const sendRfiAssignedEmail = async ({ to, rfiNumber, rfiTitle, assignedBy, projectName, rfiUrl }) => {
+const sendRfiAssignedEmail = async ({
+  to,
+  rfiNumber,
+  rfiTitle,
+  assignedBy,
+  projectName,
+  rfiUrl,
+}) => {
   const subject = `RFI #${rfiNumber} Assigned to You: ${rfiTitle}`;
   const html = `
     <!DOCTYPE html>
@@ -135,7 +164,15 @@ const sendRfiAssignedEmail = async ({ to, rfiNumber, rfiTitle, assignedBy, proje
   return sendEmail({ to, subject, html, text });
 };
 
-const sendRfiResponseEmail = async ({ to, rfiNumber, rfiTitle, respondedBy, responseText, projectName, rfiUrl }) => {
+const sendRfiResponseEmail = async ({
+  to,
+  rfiNumber,
+  rfiTitle,
+  respondedBy,
+  responseText,
+  projectName,
+  rfiUrl,
+}) => {
   const subject = `New Response on RFI #${rfiNumber}: ${rfiTitle}`;
   const html = `
     <!DOCTYPE html>
@@ -177,7 +214,15 @@ const sendRfiResponseEmail = async ({ to, rfiNumber, rfiTitle, respondedBy, resp
   return sendEmail({ to, subject, html, text });
 };
 
-const sendRfiStatusChangeEmail = async ({ to, rfiNumber, rfiTitle, newStatus, changedBy, projectName, rfiUrl }) => {
+const sendRfiStatusChangeEmail = async ({
+  to,
+  rfiNumber,
+  rfiTitle,
+  newStatus,
+  changedBy,
+  projectName,
+  rfiUrl,
+}) => {
   const subject = `RFI #${rfiNumber} Status Changed to ${newStatus.toUpperCase()}`;
   const statusColors = {
     open: "#1890ff",

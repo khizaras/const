@@ -394,9 +394,7 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
                 size="small"
                 style={{ marginBottom: 16 }}
                 extra={
-                  <Text type="secondary">
-                    {rfi.watchers.length} watching
-                  </Text>
+                  <Text type="secondary">{rfi.watchers.length} watching</Text>
                 }
               >
                 <Space wrap>

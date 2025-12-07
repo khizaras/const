@@ -42,6 +42,7 @@ APP_URL=http://localhost:5173
 ```
 
 **Important Notes:**
+
 - Replace `your-email@gmail.com` with your actual Gmail address
 - Use the 16-character App Password (with or without spaces) as `EMAIL_PASSWORD`
 - Do NOT use your regular Gmail password
@@ -52,11 +53,13 @@ APP_URL=http://localhost:5173
 After updating the `.env` file:
 
 1. Restart your server:
+
    ```bash
    npm run server:dev
    ```
 
 2. Check the server logs for:
+
    ```
    Email transporter initialized successfully
    ```
@@ -68,21 +71,25 @@ After updating the `.env` file:
 The following email notifications are automatically sent:
 
 ### 1. RFI Created
+
 - **Sent to:** Watchers (excluding creator)
 - **Trigger:** New RFI is created
 - **Contains:** RFI number, title, creator, project name, link to RFI
 
 ### 2. RFI Assigned
+
 - **Sent to:** Assigned user
 - **Trigger:** RFI is assigned to a user (during creation or update)
 - **Contains:** RFI number, title, assigned by, project name, link to RFI
 
 ### 3. Response Added
+
 - **Sent to:** All watchers (excluding responder)
 - **Trigger:** Someone adds a response to the RFI
 - **Contains:** RFI number, title, responder, response text, link to RFI
 
 ### 4. Status Changed
+
 - **Sent to:** All watchers
 - **Trigger:** RFI status changes (open → answered → closed)
 - **Contains:** RFI number, title, new status, changed by, link to RFI
@@ -90,21 +97,26 @@ The following email notifications are automatically sent:
 ## Troubleshooting
 
 ### "Email service not available" in logs
+
 - Check that `EMAIL_USER` and `EMAIL_PASSWORD` are set in `.env`
 - Restart the server after updating `.env`
 
 ### Emails not being sent
+
 - Verify your App Password is correct (regenerate if needed)
 - Check that 2-Factor Authentication is enabled on your Google Account
 - Look for error messages in server logs
 - Ensure recipient email addresses exist in the `users` table
 
 ### "Invalid login" error
+
 - You might be using your regular Gmail password instead of the App Password
 - Regenerate a new App Password and update `.env`
 
 ### Rate Limiting
+
 Gmail has sending limits:
+
 - ~500 emails per day for regular Gmail accounts
 - Consider using a G Suite/Google Workspace account for higher limits
 
@@ -113,6 +125,7 @@ Gmail has sending limits:
 While this setup uses Gmail, you can configure other SMTP providers:
 
 ### SendGrid
+
 ```env
 EMAIL_HOST=smtp.sendgrid.net
 EMAIL_PORT=587
@@ -121,6 +134,7 @@ EMAIL_PASSWORD=your-sendgrid-api-key
 ```
 
 ### AWS SES
+
 ```env
 EMAIL_HOST=email-smtp.us-east-1.amazonaws.com
 EMAIL_PORT=587
@@ -139,6 +153,7 @@ EMAIL_PASSWORD=your-smtp-password
 ## Disabling Email Notifications
 
 To disable email notifications temporarily:
+
 1. Remove or comment out `EMAIL_USER` and `EMAIL_PASSWORD` from `.env`
 2. Restart the server
 3. The app will log "Email notifications will be disabled" and continue working

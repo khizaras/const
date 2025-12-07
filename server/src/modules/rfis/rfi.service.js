@@ -257,7 +257,9 @@ const createRfi = async (projectId, userId, payload) => {
           [userId]
         );
 
-        const rfiUrl = `${process.env.APP_URL || 'http://localhost:5173'}/projects/${projectId}/rfis/${rfiId}`;
+        const rfiUrl = `${
+          process.env.APP_URL || "http://localhost:5173"
+        }/projects/${projectId}/rfis/${rfiId}`;
         const createdBy = `${creator.first_name} ${creator.last_name}`;
         const projectName = project.name;
 
@@ -280,10 +282,12 @@ const createRfi = async (projectId, userId, payload) => {
         // Send email to watchers (excluding creator)
         if (watcherSet.size > 1) {
           const watcherEmails = await pool.execute(
-            `SELECT email FROM users WHERE id IN (${Array.from(watcherSet).filter(id => id !== userId).join(',')}) AND email IS NOT NULL`
+            `SELECT email FROM users WHERE id IN (${Array.from(watcherSet)
+              .filter((id) => id !== userId)
+              .join(",")}) AND email IS NOT NULL`
           );
           if (watcherEmails[0].length > 0) {
-            const emails = watcherEmails[0].map(u => u.email);
+            const emails = watcherEmails[0].map((u) => u.email);
             await sendRfiCreatedEmail({
               to: emails,
               rfiNumber: nextNumber,
@@ -295,7 +299,12 @@ const createRfi = async (projectId, userId, payload) => {
           }
         }
       } catch (emailError) {
-        logger.error("Failed to send RFI creation emails:", emailError);
+        logger.error({
+          err: emailError,
+          rfiId,
+          projectId,
+          message: emailError.message,
+        }, "Failed to send RFI creation emails");
       }
     });
 
@@ -374,11 +383,13 @@ const updateRfi = async (projectId, rfiId, payload, updatingUserId = null) => {
           [rfiId]
         );
 
-        const rfiUrl = `${process.env.APP_URL || 'http://localhost:5173'}/projects/${projectId}/rfis/${rfiId}`;
+        const rfiUrl = `${
+          process.env.APP_URL || "http://localhost:5173"
+        }/projects/${projectId}/rfis/${rfiId}`;
         const changedBy = `${updater.first_name} ${updater.last_name}`;
 
         if (watchers.length > 0) {
-          const emails = watchers.map(w => w.email);
+          const emails = watchers.map((w) => w.email);
           await sendRfiStatusChangeEmail({
             to: emails,
             rfiNumber: oldRfi.number,
@@ -390,7 +401,14 @@ const updateRfi = async (projectId, rfiId, payload, updatingUserId = null) => {
           });
         }
       } catch (emailError) {
-        logger.error("Failed to send status change email:", emailError);
+        logger.error({
+          err: emailError,
+          rfiId,
+          projectId,
+          oldStatus: oldRfi.status,
+          newStatus: payload.status,
+          message: emailError.message,
+        }, "Failed to send status change email");
       }
     });
   }
@@ -459,11 +477,13 @@ const addRfiResponse = async (projectId, rfiId, userId, payload) => {
         [rfiId, userId]
       );
 
-      const rfiUrl = `${process.env.APP_URL || 'http://localhost:5173'}/projects/${projectId}/rfis/${rfiId}`;
+      const rfiUrl = `${
+        process.env.APP_URL || "http://localhost:5173"
+      }/projects/${projectId}/rfis/${rfiId}`;
       const respondedBy = `${responder.first_name} ${responder.last_name}`;
 
       if (watchers.length > 0) {
-        const emails = watchers.map(w => w.email);
+        const emails = watchers.map((w) => w.email);
         await sendRfiResponseEmail({
           to: emails,
           rfiNumber: rfi.number,
@@ -475,7 +495,13 @@ const addRfiResponse = async (projectId, rfiId, userId, payload) => {
         });
       }
     } catch (emailError) {
-      logger.error("Failed to send response email:", emailError);
+      logger.error({
+        err: emailError,
+        rfiId,
+        projectId,
+        userId,
+        message: emailError.message,
+      }, "Failed to send response email");
     }
   });
 
