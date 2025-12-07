@@ -1,7 +1,7 @@
 const express = require("express");
 const { requireAuth } = require("../middleware/auth");
 const { authRouter } = require("../modules/auth/auth.routes");
-const { projectRouter } = require("../modules/projects/project.routes");
+const { projectUserRouter } = require("../modules/projects/project.routes");
 const { projectRfiRouter } = require("../modules/rfis/rfi.routes");
 const {
   projectFileRouter,
@@ -13,7 +13,7 @@ const apiRouter = express.Router();
 
 apiRouter.use("/auth", authRouter);
 apiRouter.use(requireAuth);
-apiRouter.use("/projects", projectRouter);
+apiRouter.use("/projects/:projectId/users", projectUserRouter);
 apiRouter.use("/projects/:projectId/rfis", projectRfiRouter);
 apiRouter.use(
   "/projects/:projectId/rfis/:rfiId/attachments",

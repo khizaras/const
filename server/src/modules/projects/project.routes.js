@@ -4,9 +4,9 @@ const {
 } = require("../../middleware/requireProjectAccess");
 const { listUsers } = require("./project.controller");
 
-const projectRouter = express.Router({ mergeParams: true });
+const projectUserRouter = express.Router({ mergeParams: true });
 
-projectRouter.use(requireProjectAccess);
-projectRouter.get("/:projectId/users", listUsers);
+projectUserRouter.use(requireProjectAccess);
+projectUserRouter.get("/", listUsers);
 
-module.exports = { projectRouter };
+module.exports = { projectUserRouter };
