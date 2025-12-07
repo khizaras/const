@@ -1,5 +1,12 @@
 const { pool } = require("../../db/pool");
 const { AppError } = require("../../utils/appError");
+const {
+  sendRfiCreatedEmail,
+  sendRfiAssignedEmail,
+  sendRfiResponseEmail,
+  sendRfiStatusChangeEmail,
+} = require("../../services/emailService");
+const logger = require("../../logger");
 
 const ensureProjectUser = async (projectId, userId) => {
   if (!userId) return null;
@@ -235,7 +242,64 @@ const createRfi = async (projectId, userId, payload) => {
     }
 
     await conn.commit();
-    return loadRfiDetail(projectId, rfiId);
+    const newRfi = await loadRfiDetail(projectId, rfiId);
+
+    // Send email notifications asynchronously
+    setImmediate(async () => {
+      try {
+        // Get project name and creator details
+        const [[project]] = await pool.execute(
+          "SELECT name FROM projects WHERE id = ?",
+          [projectId]
+        );
+        const [[creator]] = await pool.execute(
+          "SELECT email, first_name, last_name FROM users WHERE id = ?",
+          [userId]
+        );
+
+        const rfiUrl = `${process.env.APP_URL || 'http://localhost:5173'}/projects/${projectId}/rfis/${rfiId}`;
+        const createdBy = `${creator.first_name} ${creator.last_name}`;
+        const projectName = project.name;
+
+        // Send email to assigned user if different from creator
+        if (payload.assignedToUserId && payload.assignedToUserId !== userId) {
+          const [[assignedUser]] = await pool.execute(
+            "SELECT email FROM users WHERE id = ?",
+            [payload.assignedToUserId]
+          );
+          await sendRfiAssignedEmail({
+            to: assignedUser.email,
+            rfiNumber: nextNumber,
+            rfiTitle: payload.title,
+            assignedBy: createdBy,
+            projectName,
+            rfiUrl,
+          });
+        }
+
+        // Send email to watchers (excluding creator)
+        if (watcherSet.size > 1) {
+          const watcherEmails = await pool.execute(
+            `SELECT email FROM users WHERE id IN (${Array.from(watcherSet).filter(id => id !== userId).join(',')}) AND email IS NOT NULL`
+          );
+          if (watcherEmails[0].length > 0) {
+            const emails = watcherEmails[0].map(u => u.email);
+            await sendRfiCreatedEmail({
+              to: emails,
+              rfiNumber: nextNumber,
+              rfiTitle: payload.title,
+              createdBy,
+              projectName,
+              rfiUrl,
+            });
+          }
+        }
+      } catch (emailError) {
+        logger.error("Failed to send RFI creation emails:", emailError);
+      }
+    });
+
+    return newRfi;
   } catch (err) {
     await conn.rollback();
     throw err;
@@ -244,8 +308,8 @@ const createRfi = async (projectId, userId, payload) => {
   }
 };
 
-const updateRfi = async (projectId, rfiId, payload) => {
-  await fetchRfiRecord(projectId, rfiId);
+const updateRfi = async (projectId, rfiId, payload, updatingUserId = null) => {
+  const oldRfi = await fetchRfiRecord(projectId, rfiId);
   if (payload.assignedToUserId) {
     await ensureProjectUser(projectId, payload.assignedToUserId);
   }
@@ -289,7 +353,49 @@ const updateRfi = async (projectId, rfiId, payload) => {
     values
   );
 
-  return loadRfiDetail(projectId, rfiId);
+  const updatedRfi = await loadRfiDetail(projectId, rfiId);
+
+  // Send email notification for status changes
+  if (payload.status && payload.status !== oldRfi.status && updatingUserId) {
+    setImmediate(async () => {
+      try {
+        const [[project]] = await pool.execute(
+          "SELECT name FROM projects WHERE id = ?",
+          [projectId]
+        );
+        const [[updater]] = await pool.execute(
+          "SELECT first_name, last_name FROM users WHERE id = ?",
+          [updatingUserId]
+        );
+        const [watchers] = await pool.execute(
+          `SELECT u.email FROM rfi_watchers rw 
+           JOIN users u ON u.id = rw.user_id 
+           WHERE rw.rfi_id = ? AND u.email IS NOT NULL`,
+          [rfiId]
+        );
+
+        const rfiUrl = `${process.env.APP_URL || 'http://localhost:5173'}/projects/${projectId}/rfis/${rfiId}`;
+        const changedBy = `${updater.first_name} ${updater.last_name}`;
+
+        if (watchers.length > 0) {
+          const emails = watchers.map(w => w.email);
+          await sendRfiStatusChangeEmail({
+            to: emails,
+            rfiNumber: oldRfi.number,
+            rfiTitle: oldRfi.title,
+            newStatus: payload.status,
+            changedBy,
+            projectName: project.name,
+            rfiUrl,
+          });
+        }
+      } catch (emailError) {
+        logger.error("Failed to send status change email:", emailError);
+      }
+    });
+  }
+
+  return updatedRfi;
 };
 
 const addRfiResponse = async (projectId, rfiId, userId, payload) => {
@@ -326,10 +432,54 @@ const addRfiResponse = async (projectId, rfiId, userId, payload) => {
     );
   }
 
-  return {
+  const responseResult = {
     responseId: result.insertId,
     rfi: await loadRfiDetail(projectId, rfiId),
   };
+
+  // Send email notifications for response
+  setImmediate(async () => {
+    try {
+      const [[rfi]] = await pool.execute(
+        "SELECT number, title FROM rfis WHERE id = ?",
+        [rfiId]
+      );
+      const [[project]] = await pool.execute(
+        "SELECT name FROM projects WHERE id = ?",
+        [projectId]
+      );
+      const [[responder]] = await pool.execute(
+        "SELECT first_name, last_name FROM users WHERE id = ?",
+        [userId]
+      );
+      const [watchers] = await pool.execute(
+        `SELECT u.email FROM rfi_watchers rw 
+         JOIN users u ON u.id = rw.user_id 
+         WHERE rw.rfi_id = ? AND u.id != ? AND u.email IS NOT NULL`,
+        [rfiId, userId]
+      );
+
+      const rfiUrl = `${process.env.APP_URL || 'http://localhost:5173'}/projects/${projectId}/rfis/${rfiId}`;
+      const respondedBy = `${responder.first_name} ${responder.last_name}`;
+
+      if (watchers.length > 0) {
+        const emails = watchers.map(w => w.email);
+        await sendRfiResponseEmail({
+          to: emails,
+          rfiNumber: rfi.number,
+          rfiTitle: rfi.title,
+          respondedBy,
+          responseText: payload.responseText,
+          projectName: project.name,
+          rfiUrl,
+        });
+      }
+    } catch (emailError) {
+      logger.error("Failed to send response email:", emailError);
+    }
+  });
+
+  return responseResult;
 };
 
 const addWatcher = async (projectId, rfiId, watcherUserId) => {

@@ -37,7 +37,7 @@ const detail = asyncHandler(async (req, res) => {
 const update = asyncHandler(async (req, res) => {
   const rfiId = Number(req.params.rfiId);
   const body = parseUpdateRfiBody(req.body);
-  const rfi = await updateRfi(req.project.id, rfiId, body);
+  const rfi = await updateRfi(req.project.id, rfiId, body, req.user.id);
   res.json(rfi);
 });
 

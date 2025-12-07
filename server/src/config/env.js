@@ -14,6 +14,11 @@ const envSchema = z.object({
   MYSQL_PASSWORD: z.string(),
   MYSQL_DB: z.string().default("procore"),
   JWT_SECRET: z.string().min(16).default("dev_secret_change_me_123"),
+  EMAIL_HOST: z.string().default("smtp.gmail.com"),
+  EMAIL_PORT: z.string().default("587"),
+  EMAIL_USER: z.string().optional(),
+  EMAIL_PASSWORD: z.string().optional(),
+  EMAIL_FROM: z.string().optional(),
 });
 
 const env = envSchema.parse(process.env);
