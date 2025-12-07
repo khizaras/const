@@ -388,6 +388,27 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
               )}
             </Descriptions>
 
+            {rfi.watchers && rfi.watchers.length > 0 && (
+              <Card
+                title="Watchers"
+                size="small"
+                style={{ marginBottom: 16 }}
+                extra={
+                  <Text type="secondary">
+                    {rfi.watchers.length} watching
+                  </Text>
+                }
+              >
+                <Space wrap>
+                  {rfi.watchers.map((watcher) => (
+                    <Tag key={watcher.user_id} color="blue">
+                      {watcher.first_name} {watcher.last_name}
+                    </Tag>
+                  ))}
+                </Space>
+              </Card>
+            )}
+
             <Card title="Question" size="small" style={{ marginBottom: 16 }}>
               <Text>{rfi.question}</Text>
             </Card>
