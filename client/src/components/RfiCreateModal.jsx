@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Modal,
   Form,
@@ -24,7 +24,28 @@ const RfiCreateModal = ({ visible, onClose, onSuccess }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [fileList, setFileList] = useState([]);
+  const [projectUsers, setProjectUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
   const projectId = useSelector((state) => state.rfis.projectId);
+
+  // Fetch project users when modal opens
+  useEffect(() => {
+    if (visible && projectId) {
+      loadProjectUsers();
+    }
+  }, [visible, projectId]);
+
+  const loadProjectUsers = async () => {
+    setLoadingUsers(true);
+    try {
+      const response = await apiClient.get(`/projects/${projectId}/users`);
+      setProjectUsers(response.data.data || []);
+    } catch (error) {
+      console.error("Failed to load project users:", error);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
 
   const handleSubmit = async (values) => {
     setLoading(true);
@@ -191,9 +212,37 @@ const RfiCreateModal = ({ visible, onClose, onSuccess }) => {
           </Form.Item>
         </Space>
 
-        <Form.Item label="Location" name="location">
-          <Input placeholder="Building, floor, or area" />
-        </Form.Item>
+        <Space style={{ width: "100%", marginBottom: 16 }} size="large">
+          <Form.Item
+            label="Location"
+            name="location"
+            style={{ marginBottom: 0, flex: 1 }}
+          >
+            <Input placeholder="Building, floor, or area" />
+          </Form.Item>
+
+          <Form.Item
+            label="Assign To"
+            name="assignedToUserId"
+            style={{ marginBottom: 0, minWidth: 200 }}
+          >
+            <Select
+              placeholder="Select user"
+              allowClear
+              loading={loadingUsers}
+              showSearch
+              filterOption={(input, option) =>
+                option.children.toLowerCase().includes(input.toLowerCase())
+              }
+            >
+              {projectUsers.map((user) => (
+                <Option key={user.id} value={user.id}>
+                  {user.first_name} {user.last_name}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+        </Space>
 
         <Form.Item label="Attachments">
           <Upload {...uploadProps}>
