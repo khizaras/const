@@ -5,7 +5,7 @@ const { pool } = require("../../db/pool");
  */
 async function getProjectUsers(projectId) {
   const [rows] = await pool.execute(
-    `SELECT u.id, u.first_name, u.last_name, u.email, u.role,
+    `SELECT u.id, u.first_name, u.last_name, u.email,
             pu.role AS project_role
      FROM project_users pu
      JOIN users u ON u.id = pu.user_id
