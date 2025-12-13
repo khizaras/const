@@ -1,5 +1,5 @@
 import React from "react";
-import { Layout, Menu, Button, Typography, Space, Tag } from "antd";
+import { Layout, Menu, Button, Typography, Space, Tag, Select } from "antd";
 import {
   FundProjectionScreenOutlined,
   ApartmentOutlined,
@@ -14,6 +14,7 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../features/auth/authSlice";
+import { setActiveProjectId } from "../features/projects/projectSlice";
 
 const { Header, Content } = Layout;
 const { Text } = Typography;
@@ -29,13 +30,12 @@ const menuItems = [
     key: "projects",
     icon: <ApartmentOutlined />,
     label: "Projects",
-    disabled: true,
   },
   { key: "rfis", icon: <FileSearchOutlined />, label: "RFIs" },
   { key: "issues", icon: <CheckSquareOutlined />, label: "Issues" },
   { key: "daily-logs", icon: <CalendarOutlined />, label: "Daily Logs" },
   { key: "documents", icon: <FolderOpenOutlined />, label: "Documents" },
-  { key: "teams", icon: <TeamOutlined />, label: "Teams", disabled: true },
+  { key: "teams", icon: <TeamOutlined />, label: "Teams" },
 ];
 
 const LayoutShell = ({ children }) => {
@@ -43,9 +43,17 @@ const LayoutShell = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const user = useSelector((state) => state.auth.user);
-  const projectId = useSelector((state) => state.rfis.projectId);
+  const activeProjectId = useSelector(
+    (state) => state.projects.activeProjectId
+  );
+  const activeProject = useSelector((state) => state.projects.activeProject);
+  const projects = useSelector((state) => state.projects.items);
 
-  const selectedKey = location.pathname.startsWith("/issues")
+  const selectedKey = location.pathname.startsWith("/projects")
+    ? "projects"
+    : location.pathname.startsWith("/teams")
+    ? "teams"
+    : location.pathname.startsWith("/issues")
     ? "issues"
     : location.pathname.startsWith("/daily-logs")
     ? "daily-logs"
@@ -75,10 +83,12 @@ const LayoutShell = ({ children }) => {
               items={menuItems}
               className="shell-menu"
               onClick={({ key }) => {
+                if (key === "projects") navigate("/projects");
                 if (key === "rfis") navigate("/");
                 if (key === "issues") navigate("/issues");
                 if (key === "daily-logs") navigate("/daily-logs");
                 if (key === "documents") navigate("/documents");
+                if (key === "teams") navigate("/teams");
               }}
             />
             <div className="action-cluster">
@@ -100,7 +110,26 @@ const LayoutShell = ({ children }) => {
             <div className="project-badge">
               <span className="badge-label">Active Project</span>
               <span className="badge-value">
-                North River Terminal · Package #{projectId}
+                {projects?.length ? (
+                  <Select
+                    value={activeProjectId ?? undefined}
+                    placeholder="Select project"
+                    style={{ minWidth: 260 }}
+                    options={projects.map((p) => ({
+                      value: Number(p.id),
+                      label: p.name,
+                    }))}
+                    onChange={(value) => {
+                      dispatch(setActiveProjectId(value));
+                    }}
+                  />
+                ) : activeProject?.name ? (
+                  activeProject.name
+                ) : activeProjectId ? (
+                  `Project #${activeProjectId}`
+                ) : (
+                  "No project selected"
+                )}
               </span>
             </div>
             <div className="status-indicators">

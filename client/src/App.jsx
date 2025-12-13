@@ -7,8 +7,11 @@ import RfiDashboard from "./pages/RfiDashboard";
 import IssuesDashboard from "./pages/IssuesDashboard";
 import DocumentsDashboard from "./pages/DocumentsDashboard";
 import DailyLogsDashboard from "./pages/DailyLogsDashboard";
+import ProjectsDashboard from "./pages/ProjectsDashboard";
+import TeamsDashboard from "./pages/TeamsDashboard";
 import LayoutShell from "./components/LayoutShell";
 import { fetchMe } from "./features/auth/authSlice";
+import { fetchProjects } from "./features/projects/projectSlice";
 
 const RequireAuth = ({ children }) => {
   const token = useSelector((state) => state.auth.token);
@@ -27,6 +30,7 @@ const App = () => {
   useEffect(() => {
     if (token) {
       dispatch(fetchMe());
+      dispatch(fetchProjects());
     }
   }, [token, dispatch]);
 
@@ -67,6 +71,26 @@ const App = () => {
             <RequireAuth>
               <LayoutShell>
                 <RfiDashboard />
+              </LayoutShell>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/projects"
+          element={
+            <RequireAuth>
+              <LayoutShell>
+                <ProjectsDashboard />
+              </LayoutShell>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/teams"
+          element={
+            <RequireAuth>
+              <LayoutShell>
+                <TeamsDashboard />
               </LayoutShell>
             </RequireAuth>
           }

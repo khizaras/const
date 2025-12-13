@@ -31,7 +31,7 @@ const RfiCreateModal = ({ visible, onClose, onSuccess }) => {
   const [uploadProgress, setUploadProgress] = useState({});
   const [projectUsers, setProjectUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
-  const projectId = useSelector((state) => state.rfis.projectId);
+  const projectId = useSelector((state) => state.projects.activeProjectId);
 
   // Fetch project users when modal opens
   useEffect(() => {

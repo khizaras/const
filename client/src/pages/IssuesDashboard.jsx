@@ -16,6 +16,7 @@ import {
 import { PlusOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import apiClient from "../services/apiClient";
 
 const typeOptions = [
@@ -38,7 +39,8 @@ const priorityOptions = [
 ];
 
 const IssuesDashboard = () => {
-  const projectId = useSelector((state) => state.rfis.projectId);
+  const navigate = useNavigate();
+  const projectId = useSelector((state) => state.projects.activeProjectId);
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState([]);
   const [meta, setMeta] = useState({ total: 0, page: 1, pageSize: 20 });
@@ -214,6 +216,19 @@ const IssuesDashboard = () => {
       message.error("Failed to update issue");
     }
   };
+
+  if (!projectId) {
+    return (
+      <Card className="panel-card" bordered={false} title="Issues & Punch">
+        <p style={{ color: "var(--neutral-600)", marginBottom: 12 }}>
+          Select an active project to view issues.
+        </p>
+        <Button type="primary" onClick={() => navigate("/projects")}>
+          Go to Projects
+        </Button>
+      </Card>
+    );
+  }
 
   return (
     <div>

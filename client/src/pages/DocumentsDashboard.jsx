@@ -3,10 +3,12 @@ import { Button, Card, Input, Space, Table, Upload, message } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import apiClient from "../services/apiClient";
 
 const DocumentsDashboard = () => {
-  const projectId = useSelector((state) => state.rfis.projectId);
+  const navigate = useNavigate();
+  const projectId = useSelector((state) => state.projects.activeProjectId);
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState([]);
   const [meta, setMeta] = useState({ total: 0, page: 1, pageSize: 25 });
@@ -100,6 +102,19 @@ const DocumentsDashboard = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [projectId, meta.page, meta.pageSize, search]
   );
+
+  if (!projectId) {
+    return (
+      <Card className="panel-card" bordered={false} title="Documents">
+        <p style={{ color: "var(--neutral-600)", marginBottom: 12 }}>
+          Select an active project to view documents.
+        </p>
+        <Button type="primary" onClick={() => navigate("/projects")}>
+          Go to Projects
+        </Button>
+      </Card>
+    );
+  }
 
   return (
     <div>

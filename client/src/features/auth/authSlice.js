@@ -16,6 +16,15 @@ const persistState = (state) => {
   localStorage.setItem("procore-auth", JSON.stringify(state));
 };
 
+const clearProjectSelection = () => {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem("procore-active-project");
+  } catch (_) {
+    // ignore
+  }
+};
+
 export const loginUser = createAsyncThunk("auth/login", async (payload) => {
   const { data } = await apiClient.post("/auth/login", payload);
   return data;
@@ -48,6 +57,7 @@ const authSlice = createSlice({
       state.error = null;
       setAuthToken(null);
       persistState({ token: null, user: null });
+      clearProjectSelection();
     },
   },
   extraReducers: (builder) => {

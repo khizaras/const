@@ -1,6 +1,10 @@
 const express = require("express");
 const { requireAuth } = require("../middleware/auth");
 const { authRouter } = require("../modules/auth/auth.routes");
+const {
+  listProjects,
+  createProjectHandler,
+} = require("../modules/projects/project.controller");
 const { projectUserRouter } = require("../modules/projects/project.routes");
 const { projectRfiRouter } = require("../modules/rfis/rfi.routes");
 const { projectIssueRouter } = require("../modules/issues/issue.routes");
@@ -17,6 +21,8 @@ const apiRouter = express.Router();
 
 apiRouter.use("/auth", authRouter);
 apiRouter.use(requireAuth);
+apiRouter.get("/projects", listProjects);
+apiRouter.post("/projects", createProjectHandler);
 apiRouter.use("/projects/:projectId/users", projectUserRouter);
 apiRouter.use("/projects/:projectId/rfis", projectRfiRouter);
 apiRouter.use("/projects/:projectId/issues", projectIssueRouter);

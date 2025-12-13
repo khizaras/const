@@ -47,7 +47,7 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewImage, setPreviewImage] = useState("");
   const [previewTitle, setPreviewTitle] = useState("");
-  const projectId = useSelector((state) => state.rfis.projectId);
+  const projectId = useSelector((state) => state.projects.activeProjectId);
 
   useEffect(() => {
     if (visible && rfiId) {

@@ -3,22 +3,28 @@ import { Row, Col, Statistic, Card, Progress, List, Tag, Button } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import RfiFilters from "../components/RfiFilters";
 import RfiList from "../components/RfiList";
 import RfiCreateModal from "../components/RfiCreateModal";
 import { fetchRfis, fetchRfiMetrics } from "../features/rfis/rfiSlice";
 
 const RfiDashboard = () => {
+  const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { items, projectId, metrics } = useSelector((state) => state.rfis);
+  const { items, metrics } = useSelector((state) => state.rfis);
+  const projectId = useSelector((state) => state.projects.activeProjectId);
+  const project = useSelector((state) => state.projects.activeProject);
   const [createModalVisible, setCreateModalVisible] = useState(false);
 
   useEffect(() => {
+    if (!projectId) return;
     dispatch(fetchRfis());
     dispatch(fetchRfiMetrics());
-  }, [dispatch]);
+  }, [dispatch, projectId]);
 
   const handleCreateSuccess = () => {
+    if (!projectId) return;
     dispatch(fetchRfis());
     dispatch(fetchRfiMetrics());
   };
@@ -91,12 +97,25 @@ const RfiDashboard = () => {
     },
   ];
 
+  if (!projectId) {
+    return (
+      <Card className="panel-card" bordered={false} title="RFIs">
+        <p style={{ color: "var(--neutral-600)", marginBottom: 12 }}>
+          Select an active project to view RFIs.
+        </p>
+        <Button type="primary" onClick={() => navigate("/projects")}>
+          Go to Projects
+        </Button>
+      </Card>
+    );
+  }
+
   return (
     <div>
       <div className="hero-grid">
         <section className="hero-grid__primary">
           <p className="hero-grid__eyebrow">
-            Live RFI Signal · North River Terminal · Core Shell
+            Live RFI Signal · {project?.name || `Project #${projectId}`}
           </p>
           <h2 className="hero-grid__title">
             Precision workflow for project clarity.
@@ -116,7 +135,7 @@ const RfiDashboard = () => {
               Create RFI
             </Button>
             <span className="hero-chip hero-chip--badge">
-              Package #{projectId || "—"}
+              Project #{projectId || "—"}
             </span>
             <span className="hero-chip hero-chip--badge">
               Ops + Field Alignment
@@ -166,7 +185,7 @@ const RfiDashboard = () => {
                 <small>Aging watchlist</small>
               </div>
               <div className="metric-tile">
-                <span>>7 days</span>
+                <span>{">"}7 days</span>
                 <strong>{m?.agingBuckets?.gt7 ?? 0}</strong>
                 <small>Escalate to close</small>
               </div>

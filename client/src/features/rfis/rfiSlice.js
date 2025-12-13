@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import apiClient, { getDefaultProjectId } from "../../services/apiClient";
+import apiClient from "../../services/apiClient";
 
 const initialFilters = {
   status: undefined,
@@ -11,7 +11,8 @@ const initialFilters = {
 export const fetchRfis = createAsyncThunk(
   "rfis/fetchRfis",
   async (_, { getState }) => {
-    const { filters, projectId } = getState().rfis;
+    const { filters } = getState().rfis;
+    const projectId = getState().projects.activeProjectId;
     const params = {
       page: 1,
       pageSize: 20,
@@ -27,7 +28,7 @@ export const fetchRfis = createAsyncThunk(
 export const fetchRfiMetrics = createAsyncThunk(
   "rfis/fetchRfiMetrics",
   async (_, { getState }) => {
-    const { projectId } = getState().rfis;
+    const projectId = getState().projects.activeProjectId;
     const { data } = await apiClient.get(`/projects/${projectId}/rfis/metrics`);
     return data;
   }
@@ -36,7 +37,7 @@ export const fetchRfiMetrics = createAsyncThunk(
 export const createRfi = createAsyncThunk(
   "rfis/createRfi",
   async (rfiData, { getState }) => {
-    const { projectId } = getState().rfis;
+    const projectId = getState().projects.activeProjectId;
     const { data } = await apiClient.post(
       `/projects/${projectId}/rfis`,
       rfiData
@@ -48,7 +49,6 @@ export const createRfi = createAsyncThunk(
 const rfiSlice = createSlice({
   name: "rfis",
   initialState: {
-    projectId: getDefaultProjectId(),
     items: [],
     meta: { total: 0, page: 1, pageSize: 20, totalPages: 1 },
     status: "idle",
@@ -59,9 +59,6 @@ const rfiSlice = createSlice({
   reducers: {
     setFilters(state, action) {
       state.filters = { ...state.filters, ...action.payload };
-    },
-    setProject(state, action) {
-      state.projectId = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -99,5 +96,5 @@ const rfiSlice = createSlice({
   },
 });
 
-export const { setFilters, setProject } = rfiSlice.actions;
+export const { setFilters } = rfiSlice.actions;
 export default rfiSlice.reducer;
