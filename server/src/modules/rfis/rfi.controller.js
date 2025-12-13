@@ -13,6 +13,7 @@ const {
   addRfiResponse,
   addWatcher,
   removeWatcher,
+  getRfiMetrics,
 } = require("./rfi.service");
 const { asyncHandler } = require("../../utils/asyncHandler");
 
@@ -62,6 +63,11 @@ const removeWatcherHandler = asyncHandler(async (req, res) => {
   res.json(rfi);
 });
 
+const metrics = asyncHandler(async (req, res) => {
+  const data = await getRfiMetrics(req.project.id);
+  res.json(data);
+});
+
 module.exports = {
   list,
   create,
@@ -70,4 +76,5 @@ module.exports = {
   respond,
   addWatcherHandler,
   removeWatcherHandler,
+  metrics,
 };

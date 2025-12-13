@@ -128,6 +128,24 @@ CREATE TABLE rfis (
   CONSTRAINT fk_rfis_bic FOREIGN KEY (ball_in_court_user_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
+CREATE TABLE rfi_audit_logs (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  rfi_id BIGINT UNSIGNED NOT NULL,
+  project_id BIGINT UNSIGNED NOT NULL,
+  user_id BIGINT UNSIGNED DEFAULT NULL,
+  action ENUM('create','update','status_change','response','assign') NOT NULL,
+  field VARCHAR(64) DEFAULT NULL,
+  old_value TEXT DEFAULT NULL,
+  new_value TEXT DEFAULT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_rfi_audit_logs_rfi (rfi_id),
+  KEY idx_rfi_audit_logs_project (project_id),
+  CONSTRAINT fk_rfi_audit_logs_rfi FOREIGN KEY (rfi_id) REFERENCES rfis(id) ON DELETE CASCADE,
+  CONSTRAINT fk_rfi_audit_logs_project FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+  CONSTRAINT fk_rfi_audit_logs_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
 CREATE TABLE rfi_responses (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   rfi_id BIGINT UNSIGNED NOT NULL,

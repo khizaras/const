@@ -6,39 +6,47 @@ import { useDispatch, useSelector } from "react-redux";
 import RfiFilters from "../components/RfiFilters";
 import RfiList from "../components/RfiList";
 import RfiCreateModal from "../components/RfiCreateModal";
-import { fetchRfis } from "../features/rfis/rfiSlice";
+import { fetchRfis, fetchRfiMetrics } from "../features/rfis/rfiSlice";
 
 const RfiDashboard = () => {
   const dispatch = useDispatch();
-  const { items, projectId } = useSelector((state) => state.rfis);
+  const { items, projectId, metrics } = useSelector((state) => state.rfis);
   const [createModalVisible, setCreateModalVisible] = useState(false);
 
   useEffect(() => {
     dispatch(fetchRfis());
+    dispatch(fetchRfiMetrics());
   }, [dispatch]);
 
   const handleCreateSuccess = () => {
     dispatch(fetchRfis());
+    dispatch(fetchRfiMetrics());
+  };
+  const fallbackCounts = {
+    open: items.filter((rfi) => rfi.status === "open").length,
+    answered: items.filter((rfi) => rfi.status === "answered").length,
+    closed: items.filter((rfi) => rfi.status === "closed").length,
+    void: items.filter((rfi) => rfi.status === "void").length,
+  };
+  const fallbackPriority = {
+    urgent: items.filter((rfi) => rfi.priority === "urgent").length,
+    high: items.filter((rfi) => rfi.priority === "high").length,
+    medium: items.filter((rfi) => rfi.priority === "medium").length,
+    low: items.filter((rfi) => rfi.priority === "low").length,
   };
 
-  const openCount = items.filter((rfi) => rfi.status === "open").length;
-  const answeredCount = items.filter((rfi) => rfi.status === "answered").length;
-  const closedCount = items.filter((rfi) => rfi.status === "closed").length;
-  const urgentCount = items.filter((rfi) => rfi.priority === "urgent").length;
-  const answeredRate = items.length
-    ? Math.round((answeredCount / items.length) * 100)
+  const m = metrics.data;
+  const openCount = m?.statusCounts?.open ?? fallbackCounts.open;
+  const answeredCount = m?.statusCounts?.answered ?? fallbackCounts.answered;
+  const closedCount = m?.statusCounts?.closed ?? fallbackCounts.closed;
+  const urgentCount = m?.priorityCounts?.urgent ?? fallbackPriority.urgent;
+  const totalCount = m?.total ?? items.length;
+  const answeredRate = totalCount
+    ? Math.round((answeredCount / totalCount) * 100)
     : 0;
 
-  const cycleDurations = items
-    .filter((rfi) => rfi.created_at && rfi.updated_at)
-    .map((rfi) =>
-      Math.max(1, dayjs(rfi.updated_at).diff(dayjs(rfi.created_at), "day"))
-    );
-  const avgCycle = cycleDurations.length
-    ? Math.round(
-        cycleDurations.reduce((acc, value) => acc + value, 0) /
-          cycleDurations.length
-      )
+  const avgCycle = m?.avgFirstResponseHours
+    ? Math.round(m.avgFirstResponseHours / 24)
     : 0;
 
   const dueSoon = items
@@ -128,6 +136,42 @@ const RfiDashboard = () => {
           </div>
         </section>
         <aside className="hero-grid__secondary">
+          <Card className="panel-card" title="Aging & SLA" bordered={false}>
+            <div
+              className="hero-metric-grid"
+              style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}
+            >
+              <div className="metric-tile">
+                <span>Open Overdue</span>
+                <strong>{m?.overdueOpen ?? 0}</strong>
+                <small>Past due date</small>
+              </div>
+              <div className="metric-tile">
+                <span>Avg First Response</span>
+                <strong>
+                  {m?.avgFirstResponseHours
+                    ? `${Math.round(m.avgFirstResponseHours)}h`
+                    : "—"}
+                </strong>
+                <small>Hours to first reply</small>
+              </div>
+              <div className="metric-tile">
+                <span>0-3 days</span>
+                <strong>{m?.agingBuckets?.le3 ?? 0}</strong>
+                <small>Fresh open items</small>
+              </div>
+              <div className="metric-tile">
+                <span>4-7 days</span>
+                <strong>{m?.agingBuckets?.btw4_7 ?? 0}</strong>
+                <small>Aging watchlist</small>
+              </div>
+              <div className="metric-tile">
+                <span>>7 days</span>
+                <strong>{m?.agingBuckets?.gt7 ?? 0}</strong>
+                <small>Escalate to close</small>
+              </div>
+            </div>
+          </Card>
           <Card className="hero-insight-card" bordered={false}>
             <div className="hero-insight-card__tabs">
               <span className="insight-tab insight-tab--active">
@@ -174,7 +218,7 @@ const RfiDashboard = () => {
       <div className="stat-grid">
         <div className="stat-grid__item">
           <div className="stat-grid__label">Total Active</div>
-          <div className="stat-grid__value">{items.length}</div>
+          <div className="stat-grid__value">{totalCount}</div>
           <small style={{ color: "var(--brand-muted)" }}>
             Includes open + answered pending close
           </small>

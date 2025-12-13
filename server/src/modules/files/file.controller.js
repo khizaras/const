@@ -2,12 +2,32 @@ const { asyncHandler } = require("../../utils/asyncHandler");
 const { AppError } = require("../../utils/appError");
 const {
   uploadFile,
+  listProjectFiles,
   downloadFile,
   deleteFileRecord,
   attachFileToEntity,
   getEntityAttachments,
   removeAttachment,
 } = require("./file.service");
+
+/**
+ * List project files
+ * GET /api/projects/:projectId/files
+ */
+const listProjectFilesHandler = asyncHandler(async (req, res) => {
+  const page = Number(req.query.page || 1);
+  const pageSize = Number(req.query.pageSize || 25);
+  const search = req.query.search ? String(req.query.search) : undefined;
+
+  const result = await listProjectFiles(req.project.id, {
+    page: Number.isFinite(page) && page > 0 ? page : 1,
+    pageSize:
+      Number.isFinite(pageSize) && pageSize > 0 ? Math.min(pageSize, 100) : 25,
+    search,
+  });
+
+  res.json(result);
+});
 
 /**
  * Upload file
@@ -114,6 +134,7 @@ const removeAttachmentHandler = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  listProjectFiles: listProjectFilesHandler,
   upload,
   download,
   deleteFile,

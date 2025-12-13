@@ -4,6 +4,9 @@ import { ConfigProvider, theme } from "antd";
 import { useDispatch, useSelector } from "react-redux";
 import Login from "./pages/Login";
 import RfiDashboard from "./pages/RfiDashboard";
+import IssuesDashboard from "./pages/IssuesDashboard";
+import DocumentsDashboard from "./pages/DocumentsDashboard";
+import DailyLogsDashboard from "./pages/DailyLogsDashboard";
 import LayoutShell from "./components/LayoutShell";
 import { fetchMe } from "./features/auth/authSlice";
 
@@ -64,6 +67,36 @@ const App = () => {
             <RequireAuth>
               <LayoutShell>
                 <RfiDashboard />
+              </LayoutShell>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/issues"
+          element={
+            <RequireAuth>
+              <LayoutShell>
+                <IssuesDashboard />
+              </LayoutShell>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/documents"
+          element={
+            <RequireAuth>
+              <LayoutShell>
+                <DocumentsDashboard />
+              </LayoutShell>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/daily-logs"
+          element={
+            <RequireAuth>
+              <LayoutShell>
+                <DailyLogsDashboard />
               </LayoutShell>
             </RequireAuth>
           }

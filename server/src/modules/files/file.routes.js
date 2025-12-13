@@ -1,11 +1,11 @@
 const express = require("express");
 const multer = require("multer");
-const { requireAuth } = require("../../middleware/auth");
 const {
   requireProjectAccess,
 } = require("../../middleware/requireProjectAccess");
 const {
   upload,
+  listProjectFiles,
   download,
   deleteFile,
   attachFile,
@@ -54,6 +54,7 @@ const multerUpload = multer({
 // Project-scoped file routes
 const projectFileRouter = express.Router({ mergeParams: true });
 projectFileRouter.use(requireProjectAccess);
+projectFileRouter.get("/", listProjectFiles);
 projectFileRouter.post("/", multerUpload.single("file"), upload);
 
 // RFI attachment routes
@@ -65,6 +66,7 @@ rfiAttachmentRouter.delete("/:attachmentId", removeAttachmentHandler);
 
 // Global file routes (download, delete)
 const fileRouter = express.Router();
+const { requireAuth } = require("../../middleware/auth");
 fileRouter.use(requireAuth);
 fileRouter.get("/:fileId/download", download);
 fileRouter.delete("/:fileId", deleteFile);

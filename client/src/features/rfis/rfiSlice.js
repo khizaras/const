@@ -24,6 +24,15 @@ export const fetchRfis = createAsyncThunk(
   }
 );
 
+export const fetchRfiMetrics = createAsyncThunk(
+  "rfis/fetchRfiMetrics",
+  async (_, { getState }) => {
+    const { projectId } = getState().rfis;
+    const { data } = await apiClient.get(`/projects/${projectId}/rfis/metrics`);
+    return data;
+  }
+);
+
 export const createRfi = createAsyncThunk(
   "rfis/createRfi",
   async (rfiData, { getState }) => {
@@ -44,6 +53,7 @@ const rfiSlice = createSlice({
     meta: { total: 0, page: 1, pageSize: 20, totalPages: 1 },
     status: "idle",
     error: null,
+    metrics: { status: "idle", error: null, data: null },
     filters: initialFilters,
   },
   reducers: {
@@ -72,6 +82,19 @@ const rfiSlice = createSlice({
       .addCase(createRfi.fulfilled, (state, action) => {
         // Optionally add new RFI to list
         state.items.unshift(action.payload);
+      })
+      .addCase(fetchRfiMetrics.pending, (state) => {
+        state.metrics.status = "loading";
+        state.metrics.error = null;
+      })
+      .addCase(fetchRfiMetrics.fulfilled, (state, action) => {
+        state.metrics.status = "succeeded";
+        state.metrics.data = action.payload;
+      })
+      .addCase(fetchRfiMetrics.rejected, (state, action) => {
+        state.metrics.status = "failed";
+        state.metrics.error =
+          action.error.message || "Failed to load RFI metrics";
       });
   },
 });

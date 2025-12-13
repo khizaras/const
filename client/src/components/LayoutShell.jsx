@@ -4,10 +4,14 @@ import {
   FundProjectionScreenOutlined,
   ApartmentOutlined,
   FileSearchOutlined,
+  CheckSquareOutlined,
+  FolderOpenOutlined,
+  CalendarOutlined,
   TeamOutlined,
   FileTextOutlined,
   PlusCircleOutlined,
 } from "@ant-design/icons";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../features/auth/authSlice";
 
@@ -19,16 +23,35 @@ const menuItems = [
     key: "portfolio",
     icon: <FundProjectionScreenOutlined />,
     label: "Portfolio",
+    disabled: true,
   },
-  { key: "projects", icon: <ApartmentOutlined />, label: "Projects" },
+  {
+    key: "projects",
+    icon: <ApartmentOutlined />,
+    label: "Projects",
+    disabled: true,
+  },
   { key: "rfis", icon: <FileSearchOutlined />, label: "RFIs" },
-  { key: "teams", icon: <TeamOutlined />, label: "Teams" },
+  { key: "issues", icon: <CheckSquareOutlined />, label: "Issues" },
+  { key: "daily-logs", icon: <CalendarOutlined />, label: "Daily Logs" },
+  { key: "documents", icon: <FolderOpenOutlined />, label: "Documents" },
+  { key: "teams", icon: <TeamOutlined />, label: "Teams", disabled: true },
 ];
 
 const LayoutShell = ({ children }) => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
   const user = useSelector((state) => state.auth.user);
   const projectId = useSelector((state) => state.rfis.projectId);
+
+  const selectedKey = location.pathname.startsWith("/issues")
+    ? "issues"
+    : location.pathname.startsWith("/daily-logs")
+    ? "daily-logs"
+    : location.pathname.startsWith("/documents")
+    ? "documents"
+    : "rfis";
 
   const initials = `${user?.firstName?.[0] ?? ""}${
     user?.lastName?.[0] ?? ""
@@ -48,9 +71,15 @@ const LayoutShell = ({ children }) => {
             </div>
             <Menu
               mode="horizontal"
-              selectedKeys={["rfis"]}
+              selectedKeys={[selectedKey]}
               items={menuItems}
               className="shell-menu"
+              onClick={({ key }) => {
+                if (key === "rfis") navigate("/");
+                if (key === "issues") navigate("/issues");
+                if (key === "daily-logs") navigate("/daily-logs");
+                if (key === "documents") navigate("/documents");
+              }}
             />
             <div className="action-cluster">
               <Button icon={<FileTextOutlined />}>Reports</Button>

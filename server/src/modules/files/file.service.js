@@ -51,6 +51,54 @@ async function uploadFile({
 }
 
 /**
+ * List files for a project
+ */
+async function listProjectFiles(
+  projectId,
+  { page = 1, pageSize = 25, search } = {}
+) {
+  const limit = pageSize;
+  const offset = (page - 1) * pageSize;
+
+  const where = ["f.project_id = ?"];
+  const params = [projectId];
+
+  if (search) {
+    where.push("(f.original_name LIKE ? OR f.mime_type LIKE ?)");
+    const like = `%${search}%`;
+    params.push(like, like);
+  }
+
+  const whereSql = `WHERE ${where.join(" AND ")}`;
+
+  const [rows] = await pool.execute(
+    `SELECT f.id, f.project_id, f.original_name, f.mime_type, f.size_bytes, f.created_at,
+            u.first_name AS uploaded_by_first_name, u.last_name AS uploaded_by_last_name
+     FROM files f
+     LEFT JOIN users u ON u.id = f.uploaded_by_user_id
+     ${whereSql}
+     ORDER BY f.created_at DESC
+     LIMIT ? OFFSET ?`,
+    [...params, limit, offset]
+  );
+
+  const [[countRow]] = await pool.execute(
+    `SELECT COUNT(*) AS total FROM files f ${whereSql}`,
+    params
+  );
+
+  return {
+    data: rows,
+    meta: {
+      total: countRow.total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(countRow.total / pageSize) || 1,
+    },
+  };
+}
+
+/**
  * Get file metadata from database
  */
 async function getFileMetadata(fileId) {
@@ -150,6 +198,7 @@ async function removeAttachment(attachmentId, userId) {
 
 module.exports = {
   uploadFile,
+  listProjectFiles,
   getFileMetadata,
   downloadFile,
   deleteFileRecord,

@@ -494,6 +494,9 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
                             {item.is_official && (
                               <Tag color="gold">Official</Tag>
                             )}
+                            {!item.responded_by_first_name && (
+                              <Tag color="blue">Email</Tag>
+                            )}
                             <Text type="secondary" style={{ fontSize: 12 }}>
                               {dayjs(item.created_at).format(
                                 "MMM D, YYYY h:mm A"

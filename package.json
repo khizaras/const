@@ -3,10 +3,19 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
     "server:dev": "nodemon server/src/index.js",
     "client:dev": "webpack serve --config client/webpack.config.js --mode development",
     "client:build": "webpack --config client/webpack.config.js --mode production",
-    "lint": "echo \"TODO: add lint script\""
+    "lint": "echo \"TODO: add lint script\"",
+    "test:inbound": "node server/scripts/test_inbound_email.js",
+    "seed:test": "node server/scripts/seed_test_data.js",
+    "seed:issues": "node server/scripts/seed_issues_test_data.js",
+    "seed:dailylogs": "node server/scripts/seed_daily_logs_test_data.js",
+    "db:apply:issues": "node server/scripts/db_apply_sql.js server/db/issues.sql",
+    "db:apply:dailylogs": "node server/scripts/db_apply_sql.js server/db/daily_logs.sql",
+    "test:issues": "node server/scripts/test_issues_api.js",
+    "test:dailylogs": "node server/scripts/test_daily_logs_api.js"
   },
   "keywords": [],
   "author": "",
@@ -40,6 +49,7 @@
     "@babel/preset-env": "^7.25.4",
     "@babel/preset-react": "^7.24.7",
     "babel-loader": "^9.1.3",
+    "concurrently": "^8.2.2",
     "css-loader": "^7.1.2",
     "dotenv-webpack": "^8.1.0",
     "html-webpack-plugin": "^5.6.0",

@@ -5,6 +5,7 @@ const { json } = require("express");
 const { ZodError } = require("zod");
 const { logger } = require("./logger");
 const { apiRouter } = require("./routes");
+const emailInboundRouter = require("./modules/inbound/email.routes");
 const { AppError } = require("./utils/appError");
 
 const app = express();
@@ -19,6 +20,8 @@ app.get("/health", (req, res) => {
 });
 
 app.use("/api", apiRouter);
+// Public inbound email webhook (no auth middleware)
+app.use("/webhooks", emailInboundRouter);
 
 // 404 handler
 app.use((req, res) => {

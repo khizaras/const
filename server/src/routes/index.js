@@ -3,6 +3,10 @@ const { requireAuth } = require("../middleware/auth");
 const { authRouter } = require("../modules/auth/auth.routes");
 const { projectUserRouter } = require("../modules/projects/project.routes");
 const { projectRfiRouter } = require("../modules/rfis/rfi.routes");
+const { projectIssueRouter } = require("../modules/issues/issue.routes");
+const {
+  projectDailyLogRouter,
+} = require("../modules/dailyLogs/dailyLog.routes");
 const {
   projectFileRouter,
   rfiAttachmentRouter,
@@ -15,6 +19,8 @@ apiRouter.use("/auth", authRouter);
 apiRouter.use(requireAuth);
 apiRouter.use("/projects/:projectId/users", projectUserRouter);
 apiRouter.use("/projects/:projectId/rfis", projectRfiRouter);
+apiRouter.use("/projects/:projectId/issues", projectIssueRouter);
+apiRouter.use("/projects/:projectId/daily-logs", projectDailyLogRouter);
 apiRouter.use(
   "/projects/:projectId/rfis/:rfiId/attachments",
   rfiAttachmentRouter

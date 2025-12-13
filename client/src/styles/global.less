@@ -312,10 +312,11 @@ body {
 
 .hero-grid {
   display: grid;
-  grid-template-columns: 1fr 400px;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-2xl);
   margin-bottom: var(--space-3xl);
-  align-items: start;
+  position: relative;
+  padding-right: 440px;
 }
 
 .hero-grid__primary {
@@ -452,6 +453,14 @@ body {
 
 .hero-grid__secondary {
   display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  width: 400px;
+  min-width: 360px;
+  max-width: 420px;
+  position: absolute;
+  top: 0;
+  right: 0;
 }
 
 .hero-insight-card {
@@ -860,10 +869,15 @@ body {
 @media (max-width: 1400px) {
   .hero-grid {
     grid-template-columns: 1fr;
+    padding-right: 0;
   }
 
   .hero-grid__secondary {
-    max-width: 600px;
+    position: static;
+    width: 100%;
+    max-width: 100%;
+    min-width: auto;
+    margin-top: var(--space-2xl);
   }
 }
 
