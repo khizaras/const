@@ -47,11 +47,22 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewImage, setPreviewImage] = useState("");
   const [previewTitle, setPreviewTitle] = useState("");
+  const [projectUsers, setProjectUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [watcherBusyId, setWatcherBusyId] = useState(null);
+  const [watcherSelectValue, setWatcherSelectValue] = useState(undefined);
+  const [commentText, setCommentText] = useState("");
+  const [commenting, setCommenting] = useState(false);
+  const [attaching, setAttaching] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({});
   const projectId = useSelector((state) => state.projects.activeProjectId);
+  const project = useSelector((state) => state.projects.activeProject);
+  const user = useSelector((state) => state.auth.user);
 
   useEffect(() => {
     if (visible && rfiId) {
       loadRfiDetail();
+      loadProjectUsers();
     }
   }, [visible, rfiId]);
 
@@ -66,6 +77,19 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
       message.error("Failed to load RFI details");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadProjectUsers = async () => {
+    if (!projectId) return;
+    setLoadingUsers(true);
+    try {
+      const res = await apiClient.get(`/projects/${projectId}/users`);
+      setProjectUsers(res.data?.data || []);
+    } catch (_) {
+      setProjectUsers([]);
+    } finally {
+      setLoadingUsers(false);
     }
   };
 
@@ -91,6 +115,55 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
     }
   };
 
+  const canDeleteComment = (c) => {
+    const role = project?.project_role;
+    return (
+      (user?.id && Number(c.author_user_id) === Number(user.id)) ||
+      role === "admin" ||
+      role === "pm"
+    );
+  };
+
+  const addComment = async () => {
+    if (!commentText.trim()) {
+      message.warning("Please enter a comment");
+      return;
+    }
+    setCommenting(true);
+    try {
+      await apiClient.post(`/projects/${projectId}/rfis/${rfiId}/comments`, {
+        body: commentText.trim(),
+      });
+      message.success("Comment added");
+      setCommentText("");
+      loadRfiDetail();
+    } catch (error) {
+      message.error(
+        error?.response?.data?.message ||
+          error?.response?.data?.error ||
+          "Failed to add comment"
+      );
+    } finally {
+      setCommenting(false);
+    }
+  };
+
+  const deleteComment = async (commentId) => {
+    try {
+      await apiClient.delete(
+        `/projects/${projectId}/rfis/${rfiId}/comments/${commentId}`
+      );
+      message.success("Comment deleted");
+      loadRfiDetail();
+    } catch (error) {
+      message.error(
+        error?.response?.data?.message ||
+          error?.response?.data?.error ||
+          "Failed to delete comment"
+      );
+    }
+  };
+
   const handleStatusChange = async (newStatus) => {
     try {
       await apiClient.patch(`/projects/${projectId}/rfis/${rfiId}`, {
@@ -100,6 +173,47 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
       loadRfiDetail();
     } catch (error) {
       message.error("Failed to update RFI status");
+    }
+  };
+
+  const addWatcher = async (userId) => {
+    if (!projectId || !rfiId || !userId) return;
+    setWatcherBusyId(Number(userId));
+    try {
+      await apiClient.post(`/projects/${projectId}/rfis/${rfiId}/watchers`, {
+        userId,
+      });
+      message.success("Watcher added");
+      setWatcherSelectValue(undefined);
+      loadRfiDetail();
+    } catch (error) {
+      message.error(
+        error?.response?.data?.message ||
+          error?.response?.data?.error ||
+          "Failed to add watcher"
+      );
+    } finally {
+      setWatcherBusyId(null);
+    }
+  };
+
+  const removeWatcher = async (userId) => {
+    if (!projectId || !rfiId || !userId) return;
+    setWatcherBusyId(Number(userId));
+    try {
+      await apiClient.delete(
+        `/projects/${projectId}/rfis/${rfiId}/watchers/${userId}`
+      );
+      message.success("Watcher removed");
+      loadRfiDetail();
+    } catch (error) {
+      message.error(
+        error?.response?.data?.message ||
+          error?.response?.data?.error ||
+          "Failed to remove watcher"
+      );
+    } finally {
+      setWatcherBusyId(null);
     }
   };
 
@@ -120,6 +234,8 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
     }
   };
 
+  const getMimeType = (file) => file?.mimetype || file?.mime_type || "";
+
   const isImageFile = (mimetype) => {
     return mimetype && mimetype.startsWith("image/");
   };
@@ -128,8 +244,13 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
     return mimetype === "application/pdf";
   };
 
-  const handlePreview = async (fileId, filename, mimetype) => {
-    if (isImageFile(mimetype)) {
+  const handlePreview = async (fileId, filename, mimetypeOrFile) => {
+    const mimeType =
+      typeof mimetypeOrFile === "string"
+        ? mimetypeOrFile
+        : getMimeType(mimetypeOrFile);
+
+    if (isImageFile(mimeType)) {
       try {
         const response = await apiClient.get(`/files/${fileId}/download`, {
           responseType: "blob",
@@ -141,7 +262,7 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
       } catch (error) {
         message.error("Failed to preview file");
       }
-    } else if (isPdfFile(mimetype)) {
+    } else if (isPdfFile(mimeType)) {
       // Open PDF in new tab
       try {
         const response = await apiClient.get(`/files/${fileId}/download`, {
@@ -164,6 +285,55 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
       return <FilePdfOutlined style={{ fontSize: 24, color: "#ff4d4f" }} />;
     }
     return <FileOutlined style={{ fontSize: 24 }} />;
+  };
+
+  const uploadAndAttach = async (file) => {
+    if (!projectId || !rfiId) return false;
+    const uid = file.uid || `${Date.now()}`;
+    setAttaching(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const uploadRes = await apiClient.post(
+        `/projects/${projectId}/files`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+          onUploadProgress: (evt) => {
+            if (!evt.total) return;
+            const pct = Math.round((evt.loaded * 100) / evt.total);
+            setUploadProgress((prev) => ({ ...prev, [uid]: pct }));
+          },
+        }
+      );
+
+      const fileId =
+        uploadRes.data?.id || uploadRes.data?.fileId || uploadRes.data;
+      if (!fileId) throw new Error("File upload did not return an id");
+
+      await apiClient.post(`/projects/${projectId}/rfis/${rfiId}/attachments`, {
+        fileId,
+      });
+
+      message.success(`${file.name} attached`);
+      setUploadProgress((prev) => ({ ...prev, [uid]: 100 }));
+      loadRfiDetail();
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message || err?.message || "Failed to attach file";
+      message.error(msg);
+    } finally {
+      setAttaching(false);
+      setTimeout(() => {
+        setUploadProgress((prev) => {
+          const next = { ...prev };
+          delete next[uid];
+          return next;
+        });
+      }, 1000);
+    }
+    return false;
   };
 
   const getStatusColor = (status) => {
@@ -288,6 +458,28 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
                   Reopen
                 </Button>
               )}
+              {(rfi.status === "open" || rfi.status === "answered") && (
+                <Popconfirm
+                  title="Void this RFI?"
+                  description="This will mark the RFI as void."
+                  onConfirm={() => handleStatusChange("void")}
+                  okText="Yes"
+                  cancelText="No"
+                >
+                  <Button danger size="small">
+                    Void RFI
+                  </Button>
+                </Popconfirm>
+              )}
+              {rfi.status === "void" && (
+                <Button
+                  type="default"
+                  size="small"
+                  onClick={() => handleStatusChange("open")}
+                >
+                  Reopen
+                </Button>
+              )}
             </Space>
           </div>
         }
@@ -388,47 +580,101 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
               )}
             </Descriptions>
 
-            {rfi.watchers && rfi.watchers.length > 0 && (
-              <Card
-                title="Watchers"
-                size="small"
-                style={{ marginBottom: 16 }}
-                extra={
-                  <Text type="secondary">{rfi.watchers.length} watching</Text>
-                }
-              >
+            <Card
+              title="Watchers"
+              size="small"
+              style={{ marginBottom: 16 }}
+              extra={
+                <Text type="secondary">
+                  {(rfi.watchers || []).length} watching
+                </Text>
+              }
+            >
+              <Space direction="vertical" style={{ width: "100%" }}>
+                <Select
+                  showSearch
+                  allowClear
+                  placeholder="Add watcher"
+                  value={watcherSelectValue}
+                  loading={loadingUsers}
+                  onChange={(value) => {
+                    setWatcherSelectValue(value);
+                    if (value) addWatcher(value);
+                  }}
+                  optionFilterProp="label"
+                  options={(projectUsers || [])
+                    .filter((u) => {
+                      const watchers = rfi.watchers || [];
+                      return !watchers.some((w) => w.user_id === u.id);
+                    })
+                    .map((u) => ({
+                      value: u.id,
+                      label: `${u.first_name} ${u.last_name}`.trim(),
+                    }))}
+                />
+
                 <Space wrap>
-                  {rfi.watchers.map((watcher) => (
-                    <Tag key={watcher.user_id} color="blue">
+                  {(rfi.watchers || []).length === 0 && (
+                    <Text type="secondary">No watchers yet.</Text>
+                  )}
+                  {(rfi.watchers || []).map((watcher) => (
+                    <Tag
+                      key={watcher.user_id}
+                      color="blue"
+                      closable
+                      onClose={(e) => {
+                        e.preventDefault();
+                        if (watcherBusyId) return;
+                        removeWatcher(watcher.user_id);
+                      }}
+                    >
                       {watcher.first_name} {watcher.last_name}
+                      {watcherBusyId === watcher.user_id ? "…" : ""}
                     </Tag>
                   ))}
                 </Space>
-              </Card>
-            )}
+              </Space>
+            </Card>
 
             <Card title="Question" size="small" style={{ marginBottom: 16 }}>
               <Text>{rfi.question}</Text>
             </Card>
 
-            {rfi.attachments && rfi.attachments.length > 0 && (
-              <Card
-                title={
-                  <Space>
-                    <PaperClipOutlined />
-                    Attachments ({rfi.attachments.length})
-                  </Space>
-                }
-                size="small"
-                style={{ marginBottom: 16 }}
-              >
+            <Card
+              title={
+                <Space>
+                  <PaperClipOutlined />
+                  Attachments ({rfi.attachments?.length || 0})
+                </Space>
+              }
+              size="small"
+              style={{ marginBottom: 16 }}
+              extra={
+                <Upload
+                  showUploadList={false}
+                  beforeUpload={(file) => {
+                    uploadAndAttach(file);
+                    return false;
+                  }}
+                >
+                  <Button
+                    size="small"
+                    loading={attaching}
+                    icon={<PaperClipOutlined />}
+                  >
+                    Add File
+                  </Button>
+                </Upload>
+              }
+            >
+              {rfi.attachments && rfi.attachments.length > 0 ? (
                 <List
                   dataSource={rfi.attachments}
                   renderItem={(item) => (
                     <List.Item
                       actions={[
-                        (isImageFile(item.mimetype) ||
-                          isPdfFile(item.mimetype)) && (
+                        (isImageFile(getMimeType(item)) ||
+                          isPdfFile(getMimeType(item))) && (
                           <Button
                             type="link"
                             icon={<EyeOutlined />}
@@ -436,7 +682,7 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
                               handlePreview(
                                 item.file_id,
                                 item.original_name,
-                                item.mimetype
+                                getMimeType(item)
                               )
                             }
                           >
@@ -455,19 +701,27 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
                       ].filter(Boolean)}
                     >
                       <List.Item.Meta
-                        avatar={<Avatar icon={getFileIcon(item.mimetype)} />}
+                        avatar={
+                          <Avatar icon={getFileIcon(getMimeType(item))} />
+                        }
                         title={item.original_name}
                         description={`${(item.size_bytes / 1024).toFixed(
                           1
                         )} KB • ${dayjs(item.attached_at).format(
                           "MMM D, YYYY"
-                        )}`}
+                        )}${
+                          uploadProgress[item.attachment_id]
+                            ? ` • ${uploadProgress[item.attachment_id]}%`
+                            : ""
+                        }`}
                       />
                     </List.Item>
                   )}
                 />
-              </Card>
-            )}
+              ) : (
+                <Text type="secondary">No attachments yet.</Text>
+              )}
+            </Card>
 
             {rfi.responses && rfi.responses.length > 0 && (
               <Card
@@ -515,6 +769,86 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
                 />
               </Card>
             )}
+
+            <Card
+              title={`Comments (${(rfi.comments || []).length})`}
+              size="small"
+              style={{ marginBottom: 16 }}
+            >
+              <List
+                dataSource={rfi.comments || []}
+                locale={{ emptyText: "No comments yet." }}
+                renderItem={(item) => (
+                  <List.Item
+                    actions={
+                      canDeleteComment(item)
+                        ? [
+                            <Popconfirm
+                              key="delete"
+                              title="Delete this comment?"
+                              okText="Delete"
+                              okButtonProps={{ danger: true }}
+                              cancelText="Cancel"
+                              onConfirm={() => deleteComment(item.id)}
+                            >
+                              <Button
+                                type="link"
+                                danger
+                                icon={<DeleteOutlined />}
+                              >
+                                Delete
+                              </Button>
+                            </Popconfirm>,
+                          ]
+                        : []
+                    }
+                  >
+                    <List.Item.Meta
+                      avatar={
+                        <Avatar>
+                          {item.first_name?.[0] || item.email?.[0] || "?"}
+                        </Avatar>
+                      }
+                      title={
+                        <Space>
+                          <Text strong>
+                            {`${item.first_name || ""} ${
+                              item.last_name || ""
+                            }`.trim() || item.email}
+                          </Text>
+                          <Text type="secondary" style={{ fontSize: 12 }}>
+                            {dayjs(item.created_at).format(
+                              "MMM D, YYYY h:mm A"
+                            )}
+                          </Text>
+                        </Space>
+                      }
+                      description={
+                        <div style={{ marginTop: 8 }}>{item.body}</div>
+                      }
+                    />
+                  </List.Item>
+                )}
+              />
+
+              <Divider style={{ margin: "12px 0" }} />
+              <Space direction="vertical" style={{ width: "100%" }}>
+                <TextArea
+                  rows={3}
+                  placeholder="Write a comment…"
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                />
+                <Button
+                  type="primary"
+                  icon={<SendOutlined />}
+                  loading={commenting}
+                  onClick={addComment}
+                >
+                  Add Comment
+                </Button>
+              </Space>
+            </Card>
 
             <Card title="Add Response" size="small">
               <TextArea

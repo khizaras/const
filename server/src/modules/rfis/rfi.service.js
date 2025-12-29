@@ -61,6 +61,24 @@ const fetchRfiRecord = async (projectId, rfiId) => {
   return rows[0];
 };
 
+const ensureValidStatusTransition = (currentStatus, nextStatus) => {
+  if (!nextStatus || nextStatus === currentStatus) return true;
+  const allowed = {
+    open: ["answered", "void"],
+    answered: ["closed", "open", "void"],
+    closed: ["open"],
+    void: ["open"],
+  };
+  const possible = allowed[currentStatus] || [];
+  if (!possible.includes(nextStatus)) {
+    throw new AppError(
+      `Invalid status transition: ${currentStatus} → ${nextStatus}`,
+      400
+    );
+  }
+  return true;
+};
+
 const listRfis = async (projectId, filters) => {
   const whereClauses = ["r.project_id = ?"];
   const params = [projectId];
@@ -204,7 +222,77 @@ const loadRfiDetail = async (projectId, rfiId) => {
     [rfiId]
   );
 
-  return { ...rfi, responses, watchers, attachments };
+  const [comments] = await pool.execute(
+    `SELECT c.id, c.author_user_id, c.body, c.created_at,
+            u.first_name, u.last_name, u.email
+     FROM comments c
+     JOIN users u ON u.id = c.author_user_id
+     WHERE c.entity_type = 'rfi' AND c.entity_id = ?
+     ORDER BY c.created_at ASC`,
+    [rfiId]
+  );
+
+  return { ...rfi, responses, watchers, attachments, comments };
+};
+
+const listRfiComments = async (projectId, rfiId) => {
+  await fetchRfiRecord(projectId, rfiId);
+  const [comments] = await pool.execute(
+    `SELECT c.id, c.author_user_id, c.body, c.created_at,
+            u.first_name, u.last_name, u.email
+     FROM comments c
+     JOIN users u ON u.id = c.author_user_id
+     WHERE c.entity_type = 'rfi' AND c.entity_id = ?
+     ORDER BY c.created_at ASC`,
+    [rfiId]
+  );
+  return comments;
+};
+
+const addRfiComment = async (projectId, rfiId, userId, body) => {
+  await fetchRfiRecord(projectId, rfiId);
+  const [result] = await pool.execute(
+    `INSERT INTO comments (entity_type, entity_id, author_user_id, body)
+     VALUES ('rfi', ?, ?, ?)`,
+    [rfiId, userId, body]
+  );
+
+  const [[comment]] = await pool.execute(
+    `SELECT c.id, c.author_user_id, c.body, c.created_at,
+            u.first_name, u.last_name, u.email
+     FROM comments c
+     JOIN users u ON u.id = c.author_user_id
+     WHERE c.id = ?
+     LIMIT 1`,
+    [result.insertId]
+  );
+  return comment;
+};
+
+const deleteRfiComment = async ({
+  projectId,
+  rfiId,
+  commentId,
+  userId,
+  role,
+}) => {
+  await fetchRfiRecord(projectId, rfiId);
+  const [[row]] = await pool.execute(
+    `SELECT id, author_user_id
+     FROM comments
+     WHERE id = ? AND entity_type = 'rfi' AND entity_id = ?
+     LIMIT 1`,
+    [commentId, rfiId]
+  );
+  if (!row) throw new AppError("Comment not found", 404);
+
+  const isPrivileged = role === "admin" || role === "pm";
+  if (!isPrivileged && Number(row.author_user_id) !== Number(userId)) {
+    throw new AppError("You cannot delete this comment", 403);
+  }
+
+  await pool.execute("DELETE FROM comments WHERE id = ?", [commentId]);
+  return true;
 };
 
 const createRfi = async (projectId, userId, payload) => {
@@ -398,6 +486,10 @@ const updateRfi = async (projectId, rfiId, payload, updatingUserId = null) => {
     await ensureProjectUser(projectId, payload.ballInCourtUserId);
   }
 
+  if (payload.status) {
+    ensureValidStatusTransition(oldRfi.status, payload.status);
+  }
+
   const fields = [];
   const values = [];
 
@@ -529,7 +621,7 @@ const updateRfi = async (projectId, rfiId, payload, updatingUserId = null) => {
 };
 
 const addRfiResponse = async (projectId, rfiId, userId, payload) => {
-  await fetchRfiRecord(projectId, rfiId);
+  const current = await fetchRfiRecord(projectId, rfiId);
   if (payload.returnToUserId) {
     await ensureProjectUser(projectId, payload.returnToUserId);
   }
@@ -542,6 +634,9 @@ const addRfiResponse = async (projectId, rfiId, userId, payload) => {
 
   const newBallInCourt = payload.returnToUserId || null;
   const newStatus = payload.isOfficial ? "answered" : null;
+  if (newStatus) {
+    ensureValidStatusTransition(current.status, newStatus);
+  }
 
   const updates = [];
   const updateValues = [];
@@ -747,5 +842,8 @@ module.exports = {
   addRfiResponse,
   addWatcher,
   removeWatcher,
+  listRfiComments,
+  addRfiComment,
+  deleteRfiComment,
   getRfiMetrics,
 };

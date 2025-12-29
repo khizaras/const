@@ -6,19 +6,27 @@ const resolvePath = (...segments) => path.resolve(__dirname, ...segments);
 require("dotenv").config({ path: resolvePath("..", ".env") });
 const babelConfigPath = resolvePath("babel.config.cjs");
 
-module.exports = ({ mode } = { mode: "development" }) => {
+module.exports = (env, argv) => {
+  const mode = argv?.mode || "development";
   const isDev = mode !== "production";
 
   return {
     entry: resolvePath("src", "index.jsx"),
     output: {
-      path: resolvePath("dist"),
+      path: resolvePath("..", "dist"),
       filename: isDev ? "bundle.js" : "assets/js/[contenthash].js",
       publicPath: "/",
       clean: true,
     },
-    mode: isDev ? "development" : "production",
-    devtool: isDev ? "eval-cheap-module-source-map" : "source-map",
+    mode,
+    // Avoid eval-based source maps to satisfy CSP without unsafe-eval
+    devtool: isDev ? "source-map" : "source-map",
+    watch: isDev,
+    watchOptions: isDev
+      ? {
+          ignored: /node_modules/,
+        }
+      : undefined,
     resolve: {
       extensions: [".js", ".jsx"],
     },
@@ -78,20 +86,5 @@ module.exports = ({ mode } = { mode: "development" }) => {
         ),
       }),
     ],
-    devServer: {
-      port: 5173,
-      historyApiFallback: true,
-      hot: true,
-      client: {
-        overlay: true,
-      },
-      proxy: [
-        {
-          context: ["/api"],
-          target: "http://localhost:5000",
-          changeOrigin: true,
-        },
-      ],
-    },
   };
 };

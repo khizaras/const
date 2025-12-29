@@ -64,6 +64,20 @@ rfiAttachmentRouter.get("/", listAttachments);
 rfiAttachmentRouter.post("/", attachFile);
 rfiAttachmentRouter.delete("/:attachmentId", removeAttachmentHandler);
 
+// Issue attachment routes
+const issueAttachmentRouter = express.Router({ mergeParams: true });
+issueAttachmentRouter.use(requireProjectAccess);
+issueAttachmentRouter.get("/", listAttachments);
+issueAttachmentRouter.post("/", attachFile);
+issueAttachmentRouter.delete("/:attachmentId", removeAttachmentHandler);
+
+// Daily log attachment routes
+const dailyLogAttachmentRouter = express.Router({ mergeParams: true });
+dailyLogAttachmentRouter.use(requireProjectAccess);
+dailyLogAttachmentRouter.get("/", listAttachments);
+dailyLogAttachmentRouter.post("/", attachFile);
+dailyLogAttachmentRouter.delete("/:attachmentId", removeAttachmentHandler);
+
 // Global file routes (download, delete)
 const fileRouter = express.Router();
 const { requireAuth } = require("../../middleware/auth");
@@ -74,5 +88,7 @@ fileRouter.delete("/:fileId", deleteFile);
 module.exports = {
   projectFileRouter,
   rfiAttachmentRouter,
+  issueAttachmentRouter,
+  dailyLogAttachmentRouter,
   fileRouter,
 };

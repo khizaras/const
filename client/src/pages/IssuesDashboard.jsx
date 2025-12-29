@@ -11,9 +11,18 @@ import {
   Space,
   Table,
   Tag,
+  Upload,
+  List,
+  Avatar,
+  Popconfirm,
   message,
 } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
+import {
+  UploadOutlined,
+  DownloadOutlined,
+  DeleteOutlined,
+} from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -51,6 +60,68 @@ const IssuesDashboard = () => {
   const [users, setUsers] = useState([]);
   const [form] = Form.useForm();
   const [detailForm] = Form.useForm();
+
+  const downloadFile = async (fileId, originalName) => {
+    try {
+      const res = await apiClient.get(`/files/${fileId}/download`, {
+        responseType: "blob",
+      });
+      const blob = new Blob([res.data]);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = originalName || `file-${fileId}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (_) {
+      message.error("Download failed");
+    }
+  };
+
+  const uploadAndAttachToIssue = async (file) => {
+    if (!projectId || !selectedIssue?.id) return;
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const uploaded = await apiClient.post(
+        `/projects/${projectId}/files`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+      const fileId = uploaded.data?.id || uploaded.data;
+      await apiClient.post(
+        `/projects/${projectId}/issues/${selectedIssue.id}/attachments`,
+        { fileId: typeof fileId === "object" ? fileId.id : fileId }
+      );
+      message.success("Attachment added");
+      openDetail(selectedIssue);
+    } catch (e) {
+      message.error(
+        e?.response?.data?.message ||
+          e?.response?.data?.error ||
+          "Failed to upload attachment"
+      );
+    }
+  };
+
+  const removeAttachment = async (attachmentId) => {
+    if (!projectId || !selectedIssue?.id) return;
+    try {
+      await apiClient.delete(
+        `/projects/${projectId}/issues/${selectedIssue.id}/attachments/${attachmentId}`
+      );
+      message.success("Attachment removed");
+      openDetail(selectedIssue);
+    } catch (e) {
+      message.error(
+        e?.response?.data?.message ||
+          e?.response?.data?.error ||
+          "Failed to remove attachment"
+      );
+    }
+  };
 
   const loadUsers = async () => {
     if (!projectId) return;
@@ -439,6 +510,66 @@ const IssuesDashboard = () => {
                 />
               </Form.Item>
             </Form>
+
+            <Card
+              size="small"
+              title={`Attachments (${
+                (selectedIssue.attachments || []).length
+              })`}
+            >
+              <Upload
+                showUploadList={false}
+                beforeUpload={(file) => {
+                  uploadAndAttachToIssue(file);
+                  return false;
+                }}
+              >
+                <Button type="primary" icon={<UploadOutlined />}>
+                  Upload
+                </Button>
+              </Upload>
+
+              <div style={{ height: 12 }} />
+
+              <List
+                dataSource={selectedIssue.attachments || []}
+                locale={{ emptyText: "No attachments yet." }}
+                renderItem={(a) => (
+                  <List.Item
+                    actions={[
+                      <Button
+                        key="download"
+                        type="link"
+                        icon={<DownloadOutlined />}
+                        onClick={() => downloadFile(a.file_id, a.original_name)}
+                      >
+                        Download
+                      </Button>,
+                      <Popconfirm
+                        key="delete"
+                        title="Remove this attachment?"
+                        okText="Remove"
+                        okButtonProps={{ danger: true }}
+                        cancelText="Cancel"
+                        onConfirm={() => removeAttachment(a.id)}
+                      >
+                        <Button type="link" danger icon={<DeleteOutlined />}>
+                          Remove
+                        </Button>
+                      </Popconfirm>,
+                    ]}
+                  >
+                    <List.Item.Meta
+                      avatar={<Avatar>{(a.original_name || "?")[0]}</Avatar>}
+                      title={a.original_name}
+                      description={`${Math.round(
+                        (a.size_bytes || 0) / 1024
+                      )} KB • ${dayjs(a.attached_at).format("DD MMM, HH:mm")}`}
+                    />
+                  </List.Item>
+                )}
+              />
+            </Card>
           </Space>
         )}
       </Modal>

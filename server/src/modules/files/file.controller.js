@@ -83,12 +83,17 @@ const deleteFile = asyncHandler(async (req, res) => {
 const attachFile = asyncHandler(async (req, res) => {
   const { fileId } = req.body;
   const entityId = Number(
-    req.params.rfiId || req.params.issueId || req.params.entityId
+    req.params.rfiId ||
+      req.params.issueId ||
+      req.params.logId ||
+      req.params.entityId
   );
   const entityType = req.params.rfiId
     ? "rfi"
     : req.params.issueId
     ? "issue"
+    : req.params.logId
+    ? "daily_log"
     : req.body.entityType;
 
   if (!fileId) {
@@ -111,12 +116,17 @@ const attachFile = asyncHandler(async (req, res) => {
  */
 const listAttachments = asyncHandler(async (req, res) => {
   const entityId = Number(
-    req.params.rfiId || req.params.issueId || req.params.entityId
+    req.params.rfiId ||
+      req.params.issueId ||
+      req.params.logId ||
+      req.params.entityId
   );
   const entityType = req.params.rfiId
     ? "rfi"
     : req.params.issueId
     ? "issue"
+    : req.params.logId
+    ? "daily_log"
     : req.query.entityType;
 
   const attachments = await getEntityAttachments(entityType, entityId);

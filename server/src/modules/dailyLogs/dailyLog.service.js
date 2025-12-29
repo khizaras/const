@@ -156,7 +156,17 @@ const loadDailyLogDetail = async (projectId, logId) => {
   const log = await fetchDailyLog(projectId, logId);
   const labor = await loadLabor(projectId, logId);
   const equipment = await loadEquipment(projectId, logId);
-  return { ...log, labor, equipment };
+  const [attachments] = await pool.execute(
+    `SELECT a.id, a.file_id, a.created_at AS attached_at,
+            f.original_name, f.mime_type, f.size_bytes
+     FROM attachments a
+     JOIN files f ON f.id = a.file_id
+     WHERE a.entity_type = 'daily_log' AND a.entity_id = ?
+     ORDER BY a.created_at DESC`,
+    [logId]
+  );
+
+  return { ...log, labor, equipment, attachments };
 };
 
 const updateDailyLog = async (projectId, logId, payload, userId) => {

@@ -14,12 +14,19 @@ const {
 const {
   projectFileRouter,
   rfiAttachmentRouter,
+  issueAttachmentRouter,
+  dailyLogAttachmentRouter,
   fileRouter,
 } = require("../modules/files/file.routes");
+const { setupRouter } = require("../modules/setup/setup.routes");
 
 const apiRouter = express.Router();
 
 apiRouter.use("/auth", authRouter);
+
+// Setup/installer endpoints are gated by env + token (no auth required)
+apiRouter.use("/setup", setupRouter);
+
 apiRouter.use(requireAuth);
 apiRouter.get("/projects", listProjects);
 apiRouter.post("/projects", createProjectHandler);
@@ -30,6 +37,14 @@ apiRouter.use("/projects/:projectId/daily-logs", projectDailyLogRouter);
 apiRouter.use(
   "/projects/:projectId/rfis/:rfiId/attachments",
   rfiAttachmentRouter
+);
+apiRouter.use(
+  "/projects/:projectId/issues/:issueId/attachments",
+  issueAttachmentRouter
+);
+apiRouter.use(
+  "/projects/:projectId/daily-logs/:logId/attachments",
+  dailyLogAttachmentRouter
 );
 apiRouter.use("/projects/:projectId/files", projectFileRouter);
 apiRouter.use("/files", fileRouter);

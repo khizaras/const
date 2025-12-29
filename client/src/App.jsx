@@ -9,6 +9,7 @@ import DocumentsDashboard from "./pages/DocumentsDashboard";
 import DailyLogsDashboard from "./pages/DailyLogsDashboard";
 import ProjectsDashboard from "./pages/ProjectsDashboard";
 import TeamsDashboard from "./pages/TeamsDashboard";
+import SetupInstaller from "./pages/SetupInstaller";
 import LayoutShell from "./components/LayoutShell";
 import { fetchMe } from "./features/auth/authSlice";
 import { fetchProjects } from "./features/projects/projectSlice";
@@ -65,6 +66,7 @@ const App = () => {
     >
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/setup" element={<SetupInstaller />} />
         <Route
           path="/"
           element={

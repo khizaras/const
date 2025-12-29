@@ -1,4 +1,5 @@
 const express = require("express");
+const path = require("path");
 const cors = require("cors");
 const helmet = require("helmet");
 const { json } = require("express");
@@ -22,6 +23,22 @@ app.get("/health", (req, res) => {
 app.use("/api", apiRouter);
 // Public inbound email webhook (no auth middleware)
 app.use("/webhooks", emailInboundRouter);
+
+// Serve built client in production
+if (process.env.NODE_ENV === "production") {
+  const distPath = path.resolve(__dirname, "..", "..", "dist");
+  app.use(express.static(distPath));
+  app.get("*", (req, res, next) => {
+    if (
+      req.path === "/health" ||
+      req.path.startsWith("/api") ||
+      req.path.startsWith("/webhooks")
+    ) {
+      return next();
+    }
+    res.sendFile(path.join(distPath, "index.html"));
+  });
+}
 
 // 404 handler
 app.use((req, res) => {

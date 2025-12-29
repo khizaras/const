@@ -6,3 +6,7 @@ dist/
 .DS_Store
 .playwright-mcp/
 uploads/
+.copy
+.env.example
+scripts/kill-port.ps1
+scripts/kill-port.sh

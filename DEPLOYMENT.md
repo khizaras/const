@@ -44,6 +44,29 @@ FLUSH PRIVILEGES;
 mysql -u procore_user -p procore_production < server/db/schema.sql
 ```
 
+#### Optional: UI “1‑Click Installer” (Recommended for first deploy)
+
+If you want a web UI to apply the schema + module tables (and optionally create the first admin user), enable the installer endpoint temporarily.
+
+1. Set these server environment variables:
+
+```env
+ENABLE_SETUP_UI=true
+SETUP_TOKEN=generate-a-strong-random-token-min-16-chars
+```
+
+2. Start the server, then open the installer UI:
+
+- `https://yourdomain.com/setup`
+
+3. Paste the `SETUP_TOKEN` and click **Run Installer**.
+
+Notes:
+
+- The installer applies: `server/db/schema.sql`, `server/db/daily_logs.sql`, `server/db/issues.sql`.
+- If the DB has _zero users_, it will also create an initial organization + admin + demo project (you must provide an Admin Password in the UI). If users already exist, seeding is skipped automatically.
+- After the first successful install, disable it by setting `ENABLE_SETUP_UI=false` (or removing it) and rotating `SETUP_TOKEN`.
+
 ### 3. Build Frontend
 
 ```bash

@@ -10,6 +10,9 @@ const {
   respond,
   addWatcherHandler,
   removeWatcherHandler,
+  listComments,
+  addComment,
+  deleteComment,
   metrics,
 } = require("./rfi.controller");
 
@@ -24,5 +27,8 @@ projectRfiRouter.patch("/:rfiId", update);
 projectRfiRouter.post("/:rfiId/responses", respond);
 projectRfiRouter.post("/:rfiId/watchers", addWatcherHandler);
 projectRfiRouter.delete("/:rfiId/watchers/:userId", removeWatcherHandler);
+projectRfiRouter.get("/:rfiId/comments", listComments);
+projectRfiRouter.post("/:rfiId/comments", addComment);
+projectRfiRouter.delete("/:rfiId/comments/:commentId", deleteComment);
 
 module.exports = { projectRfiRouter };

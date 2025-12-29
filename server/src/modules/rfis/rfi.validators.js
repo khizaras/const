@@ -50,6 +50,14 @@ const watcherSchema = z.object({
   userId: z.coerce.number().int().positive(),
 });
 
+const commentSchema = z.object({
+  body: z
+    .string()
+    .min(1)
+    .max(2000)
+    .transform((v) => v.trim()),
+});
+
 const listQuerySchema = z.object({
   page: z.coerce.number().int().positive().optional().default(1),
   pageSize: z.coerce.number().int().positive().max(100).optional().default(20),
@@ -69,5 +77,6 @@ module.exports = {
   parseUpdateRfiBody: (payload) => parseBody(updateRfiSchema, payload),
   parseResponseBody: (payload) => parseBody(responseSchema, payload),
   parseWatcherBody: (payload) => parseBody(watcherSchema, payload),
+  parseCommentBody: (payload) => parseBody(commentSchema, payload),
   parseListQuery: (payload) => parseQuery(listQuerySchema, payload),
 };

@@ -3,6 +3,7 @@ const {
   parseUpdateRfiBody,
   parseResponseBody,
   parseWatcherBody,
+  parseCommentBody,
   parseListQuery,
 } = require("./rfi.validators");
 const {
@@ -13,6 +14,9 @@ const {
   addRfiResponse,
   addWatcher,
   removeWatcher,
+  listRfiComments,
+  addRfiComment,
+  deleteRfiComment,
   getRfiMetrics,
 } = require("./rfi.service");
 const { asyncHandler } = require("../../utils/asyncHandler");
@@ -63,6 +67,37 @@ const removeWatcherHandler = asyncHandler(async (req, res) => {
   res.json(rfi);
 });
 
+const listComments = asyncHandler(async (req, res) => {
+  const rfiId = Number(req.params.rfiId);
+  const comments = await listRfiComments(req.project.id, rfiId);
+  res.json({ data: comments });
+});
+
+const addComment = asyncHandler(async (req, res) => {
+  const rfiId = Number(req.params.rfiId);
+  const body = parseCommentBody(req.body);
+  const comment = await addRfiComment(
+    req.project.id,
+    rfiId,
+    req.user.id,
+    body.body
+  );
+  res.status(201).json({ data: comment });
+});
+
+const deleteComment = asyncHandler(async (req, res) => {
+  const rfiId = Number(req.params.rfiId);
+  const commentId = Number(req.params.commentId);
+  await deleteRfiComment({
+    projectId: req.project.id,
+    rfiId,
+    commentId,
+    userId: req.user.id,
+    role: req.project.role,
+  });
+  res.json({ success: true });
+});
+
 const metrics = asyncHandler(async (req, res) => {
   const data = await getRfiMetrics(req.project.id);
   res.json(data);
@@ -76,5 +111,8 @@ module.exports = {
   respond,
   addWatcherHandler,
   removeWatcherHandler,
+  listComments,
+  addComment,
+  deleteComment,
   metrics,
 };

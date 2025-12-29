@@ -65,6 +65,7 @@ const RfiCreateModal = ({ visible, onClose, onSuccess }) => {
         location: values.location || null,
         dueDate: values.dueDate ? values.dueDate.format("YYYY-MM-DD") : null,
         assignedToUserId: values.assignedToUserId || null,
+        watchers: (values.watchers || []).map(Number),
       };
 
       const result = await dispatch(createRfi(rfiData)).unwrap();
@@ -325,6 +326,30 @@ const RfiCreateModal = ({ visible, onClose, onSuccess }) => {
               </Select>
             </Form.Item>
           </Space>
+
+          <Form.Item
+            label="Watchers"
+            name="watchers"
+            style={{ marginBottom: 16 }}
+          >
+            <Select
+              mode="multiple"
+              size="large"
+              placeholder="Add watchers"
+              allowClear
+              loading={loadingUsers}
+              showSearch
+              filterOption={(input, option) =>
+                option.children?.toLowerCase().includes(input.toLowerCase())
+              }
+            >
+              {projectUsers.map((user) => (
+                <Option key={user.id} value={user.id}>
+                  {user.first_name} {user.last_name}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
 
           <Divider />
 

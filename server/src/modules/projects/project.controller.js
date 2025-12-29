@@ -52,12 +52,12 @@ const listUsers = asyncHandler(async (req, res) => {
 });
 
 /**
- * Add an existing user to a project (admin only)
+ * Add an existing user to a project (admin/pm)
  * POST /api/projects/:projectId/users
  */
 const addUser = asyncHandler(async (req, res) => {
-  if (req.project?.role !== "admin") {
-    throw new AppError("Only project admins can add members", 403);
+  if (req.project?.role !== "admin" && req.project?.role !== "pm") {
+    throw new AppError("Only project admins/PMs can add members", 403);
   }
 
   const body = parseAddProjectUserBody(req.body || {});

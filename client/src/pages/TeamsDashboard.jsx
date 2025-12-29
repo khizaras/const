@@ -22,11 +22,22 @@ const TeamsDashboard = () => {
   const navigate = useNavigate();
   const projectId = useSelector((state) => state.projects.activeProjectId);
   const project = useSelector((state) => state.projects.activeProject);
-
-  const canManageMembers = project?.project_role === "admin";
+  const user = useSelector((state) => state.auth.user);
 
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState([]);
+
+  const myRole = useMemo(() => {
+    if (project?.project_role) return project.project_role;
+    const my = items.find(
+      (m) =>
+        (user?.id && m.id === user.id) ||
+        (user?.email && m.email?.toLowerCase?.() === user.email.toLowerCase())
+    );
+    return my?.project_role;
+  }, [items, project?.project_role, user?.email, user?.id]);
+
+  const canManageMembers = myRole === "admin" || myRole === "pm";
 
   const [addOpen, setAddOpen] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -117,11 +128,13 @@ const TeamsDashboard = () => {
         title={`Project Members${project?.name ? ` · ${project.name}` : ""}`}
         extra={
           <Space>
-            {canManageMembers && (
-              <Button type="primary" onClick={() => setAddOpen(true)}>
-                Add Member
-              </Button>
-            )}
+            <Button
+              type="primary"
+              disabled={!canManageMembers}
+              onClick={() => setAddOpen(true)}
+            >
+              Add Member
+            </Button>
             <Button onClick={loadMembers}>Refresh</Button>
           </Space>
         }
