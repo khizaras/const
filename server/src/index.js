@@ -2,6 +2,7 @@ const { app } = require("./app");
 const { env } = require("./config/env");
 const { logger } = require("./logger");
 const { initializeTransporter } = require("./services/emailService");
+const { initializeScheduler } = require("./scheduler");
 require("./db/pool");
 
 const port = Number(env.PORT || 4000);
@@ -39,6 +40,13 @@ try {
 
 const server = app.listen(port, () => {
   logger.info({ port, env: env.NODE_ENV }, "Server listening");
+
+  // Initialize scheduled jobs after server starts
+  try {
+    initializeScheduler();
+  } catch (err) {
+    logger.error({ err }, "Scheduler init failed");
+  }
 });
 
 server.on("error", (err) => {

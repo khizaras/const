@@ -110,6 +110,21 @@ const auditLogs = asyncHandler(async (req, res) => {
   res.json({ data: logs });
 });
 
+const getWorkflow = asyncHandler(async (req, res) => {
+  const {
+    getWorkflowDefinition,
+    DEFAULT_RFI_WORKFLOW,
+  } = require("./rfi.workflow");
+  const workflow = await getWorkflowDefinition(req.project.id);
+  res.json({ workflow: workflow || DEFAULT_RFI_WORKFLOW });
+});
+
+const getSlaStatus = asyncHandler(async (req, res) => {
+  const { getSlaStatusSummary } = require("./sla.service");
+  const summary = await getSlaStatusSummary(req.project.id);
+  res.json(summary);
+});
+
 module.exports = {
   list,
   create,
@@ -123,4 +138,6 @@ module.exports = {
   deleteComment,
   metrics,
   auditLogs,
+  getWorkflow,
+  getSlaStatus,
 };

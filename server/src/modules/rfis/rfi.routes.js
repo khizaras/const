@@ -14,6 +14,9 @@ const {
   addComment,
   deleteComment,
   metrics,
+  auditLogs,
+  getWorkflow,
+  getSlaStatus,
 } = require("./rfi.controller");
 
 const projectRfiRouter = express.Router({ mergeParams: true });
@@ -22,6 +25,8 @@ projectRfiRouter.use(requireProjectAccess);
 projectRfiRouter.get("/", list);
 projectRfiRouter.post("/", create);
 projectRfiRouter.get("/metrics", metrics);
+projectRfiRouter.get("/workflow", getWorkflow);
+projectRfiRouter.get("/sla-status", getSlaStatus);
 projectRfiRouter.get("/:rfiId", detail);
 projectRfiRouter.get("/:rfiId/audit", auditLogs);
 projectRfiRouter.patch("/:rfiId", update);

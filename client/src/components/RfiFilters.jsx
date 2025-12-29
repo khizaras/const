@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Card,
   Form,
@@ -18,6 +18,7 @@ import {
 import dayjs from "dayjs";
 import { useDispatch, useSelector } from "react-redux";
 import { setFilters, fetchRfis } from "../features/rfis/rfiSlice";
+import apiClient from "../services/apiClient";
 
 const statusOptions = [
   { value: "open", label: "Open" },
@@ -36,8 +37,29 @@ const priorityOptions = [
 const RfiFilters = () => {
   const dispatch = useDispatch();
   const { filters, meta } = useSelector((state) => state.rfis);
+  const projectId = useSelector((state) => state.projects.activeProjectId);
+  const [projectUsers, setProjectUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
 
   const [form] = Form.useForm();
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      if (!projectId) return;
+      setLoadingUsers(true);
+      try {
+        const { data } = await apiClient.get(`/projects/${projectId}/users`);
+        setProjectUsers(data.data || []);
+      } catch (error) {
+        // Non-blocking; filters still function without user list
+        console.error("Failed to load project users", error);
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+
+    loadUsers();
+  }, [projectId]);
 
   useEffect(() => {
     form.setFieldsValue({
@@ -65,6 +87,8 @@ const RfiFilters = () => {
         priority: undefined,
         search: "",
         dueBefore: undefined,
+        assignedTo: undefined,
+        ballInCourt: undefined,
       })
     );
     dispatch(fetchRfis());
@@ -133,6 +157,38 @@ const RfiFilters = () => {
                 allowClear
                 prefix={<SearchOutlined />}
                 placeholder="Title, question, spec, location"
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+        <Row gutter={16}>
+          <Col xs={24} md={12}>
+            <Form.Item name="assignedTo" label="Assigned To">
+              <Select
+                allowClear
+                placeholder="Anyone"
+                loading={loadingUsers}
+                options={projectUsers.map((u) => ({
+                  value: u.id,
+                  label: `${u.first_name} ${u.last_name}`,
+                }))}
+                showSearch
+                optionFilterProp="label"
+              />
+            </Form.Item>
+          </Col>
+          <Col xs={24} md={12}>
+            <Form.Item name="ballInCourt" label="Ball in Court">
+              <Select
+                allowClear
+                placeholder="Anyone"
+                loading={loadingUsers}
+                options={projectUsers.map((u) => ({
+                  value: u.id,
+                  label: `${u.first_name} ${u.last_name}`,
+                }))}
+                showSearch
+                optionFilterProp="label"
               />
             </Form.Item>
           </Col>

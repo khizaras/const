@@ -27,6 +27,7 @@ import dayjs from "dayjs";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import apiClient from "../services/apiClient";
+import { downloadFileWithSignedUrl } from "../services/downloadUtils";
 
 const typeOptions = [
   { value: "issue", label: "Issue" },
@@ -63,18 +64,7 @@ const IssuesDashboard = () => {
 
   const downloadFile = async (fileId, originalName) => {
     try {
-      const res = await apiClient.get(`/files/${fileId}/download`, {
-        responseType: "blob",
-      });
-      const blob = new Blob([res.data]);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = originalName || `file-${fileId}`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
+      await downloadFileWithSignedUrl(fileId, originalName);
     } catch (_) {
       message.error("Download failed");
     }

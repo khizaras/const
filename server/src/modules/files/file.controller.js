@@ -8,6 +8,9 @@ const {
   attachFileToEntity,
   getEntityAttachments,
   removeAttachment,
+  generateSignedDownloadUrl,
+  verifySignedToken,
+  getFileMetadata,
 } = require("./file.service");
 
 /**
@@ -51,11 +54,23 @@ const upload = asyncHandler(async (req, res) => {
 });
 
 /**
- * Download file
+ * Download file (with optional signed URL verification)
  * GET /api/files/:fileId/download
  */
 const download = asyncHandler(async (req, res) => {
   const fileId = Number(req.params.fileId);
+  const { expires, token } = req.query;
+
+  // If signed URL params provided, verify them (allows unauthenticated access for valid tokens)
+  if (expires && token) {
+    if (!verifySignedToken(fileId, Number(expires), token)) {
+      throw new AppError("Invalid or expired download link", 403);
+    }
+  } else if (!req.user) {
+    // If no signed params and no authenticated user, reject
+    throw new AppError("Authentication required or use signed link", 401);
+  }
+
   const { buffer, metadata } = await downloadFile(fileId);
 
   res.setHeader("Content-Type", metadata.mime_type);
@@ -64,6 +79,18 @@ const download = asyncHandler(async (req, res) => {
     `attachment; filename="${encodeURIComponent(metadata.original_name)}"`
   );
   res.send(buffer);
+});
+
+/**
+ * Generate signed download URL
+ * GET /api/files/:fileId/signed-url
+ */
+const signedUrl = asyncHandler(async (req, res) => {
+  const fileId = Number(req.params.fileId);
+  await getFileMetadata(fileId); // ensure file exists
+  const baseUrl = process.env.APP_URL || "";
+  const url = generateSignedDownloadUrl(fileId, baseUrl);
+  res.json({ url });
 });
 
 /**
@@ -147,6 +174,7 @@ module.exports = {
   listProjectFiles: listProjectFilesHandler,
   upload,
   download,
+  signedUrl,
   deleteFile,
   attachFile,
   listAttachments,

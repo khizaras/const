@@ -7,6 +7,12 @@ const {
   sendRfiStatusChangeEmail,
 } = require("../../services/emailService");
 const { logger } = require("../../logger");
+const { createNotification } = require("../notifications/notification.service");
+const {
+  isTransitionAllowed,
+  getWorkflowDefinition,
+  DEFAULT_RFI_WORKFLOW,
+} = require("./rfi.workflow");
 
 const serializeValue = (value) => {
   if (value === null || value === undefined) return null;
@@ -61,16 +67,17 @@ const fetchRfiRecord = async (projectId, rfiId) => {
   return rows[0];
 };
 
+const listWatcherUserIds = async (rfiId) => {
+  const [rows] = await pool.execute(
+    `SELECT user_id FROM rfi_watchers WHERE rfi_id = ?`,
+    [rfiId]
+  );
+  return rows.map((r) => Number(r.user_id));
+};
+
 const ensureValidStatusTransition = (currentStatus, nextStatus) => {
   if (!nextStatus || nextStatus === currentStatus) return true;
-  const allowed = {
-    open: ["answered", "void"],
-    answered: ["closed", "open", "void"],
-    closed: ["open"],
-    void: ["open"],
-  };
-  const possible = allowed[currentStatus] || [];
-  if (!possible.includes(nextStatus)) {
+  if (!isTransitionAllowed(currentStatus, nextStatus)) {
     throw new AppError(
       `Invalid status transition: ${currentStatus} → ${nextStatus}`,
       400
@@ -362,6 +369,39 @@ const createRfi = async (projectId, userId, payload) => {
     await conn.commit();
     const newRfi = await loadRfiDetail(projectId, rfiId);
 
+    // In-app notifications
+    const watcherIds = await listWatcherUserIds(rfiId);
+    const basePayload = {
+      rfiId,
+      projectId,
+      number: nextNumber,
+      title: payload.title,
+    };
+
+    await Promise.all(
+      watcherIds
+        .filter((uid) => uid && uid !== userId)
+        .map((uid) =>
+          createNotification({
+            userId: uid,
+            type: "rfi_created",
+            entityType: "rfi",
+            entityId: rfiId,
+            payload: basePayload,
+          })
+        )
+    );
+
+    if (payload.assignedToUserId && payload.assignedToUserId !== userId) {
+      await createNotification({
+        userId: payload.assignedToUserId,
+        type: "rfi_assigned",
+        entityType: "rfi",
+        entityId: rfiId,
+        payload: basePayload,
+      });
+    }
+
     await insertAuditLog({
       projectId,
       rfiId,
@@ -514,6 +554,11 @@ const updateRfi = async (projectId, rfiId, payload, updatingUserId = null) => {
     }
   });
 
+  const assignedChanged =
+    payload.assignedToUserId !== undefined &&
+    payload.assignedToUserId !== oldRfi.assigned_to_user_id;
+  const statusChanged = payload.status && payload.status !== oldRfi.status;
+
   if (!fields.length) {
     throw new AppError("No fields to update", 400);
   }
@@ -562,6 +607,47 @@ const updateRfi = async (projectId, rfiId, payload, updatingUserId = null) => {
           newValue: change.newValue,
         })
       )
+    );
+  }
+
+  const watcherIds = await listWatcherUserIds(rfiId);
+
+  if (assignedChanged && payload.assignedToUserId) {
+    await createNotification({
+      userId: payload.assignedToUserId,
+      type: "rfi_assigned",
+      entityType: "rfi",
+      entityId: rfiId,
+      payload: {
+        rfiId,
+        projectId,
+        number: oldRfi.number,
+        title: oldRfi.title,
+      },
+    });
+  }
+
+  if (statusChanged) {
+    const basePayload = {
+      rfiId,
+      projectId,
+      number: oldRfi.number,
+      title: oldRfi.title,
+      from: oldRfi.status,
+      to: payload.status,
+    };
+    await Promise.all(
+      watcherIds
+        .filter((uid) => uid && uid !== updatingUserId)
+        .map((uid) =>
+          createNotification({
+            userId: uid,
+            type: "rfi_status",
+            entityType: "rfi",
+            entityId: rfiId,
+            payload: basePayload,
+          })
+        )
     );
   }
 
@@ -723,6 +809,33 @@ const addRfiResponse = async (projectId, rfiId, userId, payload) => {
       );
     }
   });
+
+  // In-app notifications to watchers and ball-in-court
+  const watcherIds = await listWatcherUserIds(rfiId);
+  const notifyIds = new Set([...watcherIds, newBallInCourt].filter(Boolean));
+
+  const basePayload = {
+    rfiId,
+    projectId,
+    number: current.number,
+    title: current.title,
+    respondedBy: userId,
+    isOfficial: payload.isOfficial,
+  };
+
+  await Promise.all(
+    Array.from(notifyIds)
+      .filter((uid) => uid && uid !== userId)
+      .map((uid) =>
+        createNotification({
+          userId: uid,
+          type: "rfi_response",
+          entityType: "rfi",
+          entityId: rfiId,
+          payload: basePayload,
+        })
+      )
+  );
 
   return responseResult;
 };

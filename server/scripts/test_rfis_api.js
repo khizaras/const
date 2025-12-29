@@ -46,7 +46,11 @@ async function ensureProject(orgId, name, code) {
 
 async function main() {
   const orgId = await ensureOrganization("Test Org");
-  const projectId = await ensureProject(orgId, "North River Terminal", "NRT-001");
+  const projectId = await ensureProject(
+    orgId,
+    "North River Terminal",
+    "NRT-001"
+  );
 
   const email = `rfis.tester+${Date.now()}@example.com`;
   const password = "Password123!";
@@ -81,7 +85,8 @@ async function main() {
 
   const createPayload = {
     title: "Confirm exterior glazing spec",
-    question: "Glass type called out differs between A6.01 and spec 08800. Clarify.",
+    question:
+      "Glass type called out differs between A6.01 and spec 08800. Clarify.",
     priority: "medium",
     discipline: "Architecture",
     specSection: "08800",
@@ -89,7 +94,10 @@ async function main() {
     dueDate: new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10),
   };
 
-  const created = await client.post(`/projects/${projectId}/rfis`, createPayload);
+  const created = await client.post(
+    `/projects/${projectId}/rfis`,
+    createPayload
+  );
   const rfiId = created.data.id;
 
   const list = await client.get(`/projects/${projectId}/rfis`, {
@@ -105,7 +113,7 @@ async function main() {
   });
 
   await client.post(`/projects/${projectId}/rfis/${rfiId}/responses`, {
-    responseText: "Use 1"/8" tempered, low-e per spec 08800.",
+    responseText: 'Use 1"/8" tempered, low-e per spec 08800.',
     isOfficial: true,
   });
 

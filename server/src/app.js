@@ -6,7 +6,9 @@ const { json } = require("express");
 const { ZodError } = require("zod");
 const { logger } = require("./logger");
 const { apiRouter } = require("./routes");
-const emailInboundRouter = require("./modules/inbound/email.routes");
+const emailInboundRouterModule = require("./modules/inbound/email.routes");
+const emailInboundRouter =
+  emailInboundRouterModule.inboundRouter || emailInboundRouterModule;
 const { AppError } = require("./utils/appError");
 
 const app = express();

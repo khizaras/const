@@ -91,6 +91,35 @@ const RfiList = () => {
         ),
       },
       {
+        title: "SLA",
+        key: "sla",
+        render: (_, record) => {
+          const isOverdue = record.days_overdue > 0;
+          const isAtRisk =
+            record.days_until_due !== null && record.days_until_due <= 2;
+
+          let color = "default";
+          let label = "On track";
+
+          if (isOverdue) {
+            color = "error";
+            label = `${record.days_overdue}d overdue`;
+          } else if (isAtRisk) {
+            color = "warning";
+            label = `Due in ${record.days_until_due}d`;
+          } else if (record.days_until_due === null) {
+            color = "default";
+            label = "No due date";
+          }
+
+          return (
+            <Tag color={color} style={{ textTransform: "capitalize" }}>
+              {label}
+            </Tag>
+          );
+        },
+      },
+      {
         title: "Ball In Court",
         key: "bic",
         render: (_, record) => (

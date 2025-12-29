@@ -1,5 +1,5 @@
 import React from "react";
-import { Layout, Menu, Button, Typography, Space, Tag, Select } from "antd";
+import { Layout, Menu, Button, Typography, Select } from "antd";
 import {
   FundProjectionScreenOutlined,
   ApartmentOutlined,
@@ -15,6 +15,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../features/auth/authSlice";
 import { setActiveProjectId } from "../features/projects/projectSlice";
+import NotificationDropdown from "./NotificationDropdown";
 
 const { Header, Content } = Layout;
 const { Text } = Typography;
@@ -96,6 +97,7 @@ const LayoutShell = ({ children }) => {
               <Button type="primary" icon={<PlusCircleOutlined />}>
                 New RFI
               </Button>
+              <NotificationDropdown />
               {user && <div className="user-avatar">{initials || "--"}</div>}
               <Button
                 type="text"

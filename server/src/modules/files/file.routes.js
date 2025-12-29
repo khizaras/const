@@ -7,41 +7,28 @@ const {
   upload,
   listProjectFiles,
   download,
+  signedUrl,
   deleteFile,
   attachFile,
   listAttachments,
   removeAttachmentHandler,
 } = require("./file.controller");
+const {
+  MAX_FILE_SIZE,
+  ALLOWED_MIME_TYPES,
+} = require("../../services/fileStorage");
 
 // Configure multer for memory storage
 const storage = multer.memoryStorage();
 const multerUpload = multer({
   storage,
   limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB max
+    fileSize: MAX_FILE_SIZE,
   },
   fileFilter: (req, file, cb) => {
-    // Allow common file types
-    const allowedMimes = [
-      "image/jpeg",
-      "image/jpg",
-      "image/png",
-      "image/gif",
-      "image/webp",
-      "application/pdf",
-      "application/msword",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "application/vnd.ms-excel",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "text/plain",
-      "text/csv",
-      "application/zip",
-      "application/x-dwg", // AutoCAD
-      "image/vnd.dwg",
-    ];
-
+    // Use shared allowed MIME types
     if (
-      allowedMimes.includes(file.mimetype) ||
+      ALLOWED_MIME_TYPES.has(file.mimetype) ||
       file.mimetype.startsWith("image/")
     ) {
       cb(null, true);
@@ -78,12 +65,21 @@ dailyLogAttachmentRouter.get("/", listAttachments);
 dailyLogAttachmentRouter.post("/", attachFile);
 dailyLogAttachmentRouter.delete("/:attachmentId", removeAttachmentHandler);
 
-// Global file routes (download, delete)
+// Global file routes (download, signed URL, delete)
 const fileRouter = express.Router();
 const { requireAuth } = require("../../middleware/auth");
-fileRouter.use(requireAuth);
-fileRouter.get("/:fileId/download", download);
-fileRouter.delete("/:fileId", deleteFile);
+// Download allows either signed token (public) or auth
+fileRouter.get(
+  "/:fileId/download",
+  (req, res, next) => {
+    if (req.query.token) return next(); // public signed access
+    return requireAuth(req, res, next);
+  },
+  download
+);
+// Signed URL generation requires auth
+fileRouter.get("/:fileId/signed-url", requireAuth, signedUrl);
+fileRouter.delete("/:fileId", requireAuth, deleteFile);
 
 module.exports = {
   projectFileRouter,

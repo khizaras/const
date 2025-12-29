@@ -14,13 +14,15 @@ module.exports = (env, argv) => {
     entry: resolvePath("src", "index.jsx"),
     output: {
       path: resolvePath("..", "dist"),
-      filename: isDev ? "bundle.js" : "assets/js/[contenthash].js",
+      filename: isDev ? "assets/js/[name].js" : "assets/js/[contenthash].js",
+      chunkFilename: isDev
+        ? "assets/js/[name].chunk.js"
+        : "assets/js/[contenthash].chunk.js",
       publicPath: "/",
       clean: true,
     },
     mode,
     // Avoid eval-based source maps to satisfy CSP without unsafe-eval
-    devtool: isDev ? "source-map" : "source-map",
     devtool: isDev ? "source-map" : "source-map",
     watchOptions: isDev
       ? {

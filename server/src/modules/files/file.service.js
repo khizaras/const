@@ -1,10 +1,37 @@
 const { pool } = require("../../db/pool");
 const { AppError } = require("../../utils/appError");
+const crypto = require("crypto");
 const {
   storeFile,
   getFile,
   deleteFile,
 } = require("../../services/fileStorage");
+
+const SIGNED_TOKEN_SECRET =
+  process.env.SIGNED_DOWNLOAD_SECRET ||
+  process.env.JWT_SECRET ||
+  "default-secret";
+const SIGNED_DOWNLOAD_EXPIRY_SECONDS =
+  Number(process.env.SIGNED_DOWNLOAD_EXPIRY) || 300; // 5 min default
+
+function generateSignedToken(fileId, expiresAt) {
+  const payload = `${fileId}:${expiresAt}`;
+  const hmac = crypto.createHmac("sha256", SIGNED_TOKEN_SECRET);
+  hmac.update(payload);
+  return hmac.digest("hex");
+}
+
+function verifySignedToken(fileId, expiresAt, token) {
+  if (Date.now() > expiresAt) return false;
+  const expected = generateSignedToken(fileId, expiresAt);
+  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(token));
+}
+
+function generateSignedDownloadUrl(fileId, baseUrl = "") {
+  const expiresAt = Date.now() + SIGNED_DOWNLOAD_EXPIRY_SECONDS * 1000;
+  const token = generateSignedToken(fileId, expiresAt);
+  return `${baseUrl}/api/files/${fileId}/download?expires=${expiresAt}&token=${token}`;
+}
 
 /**
  * Upload file and store metadata in database
@@ -205,4 +232,6 @@ module.exports = {
   attachFileToEntity,
   getEntityAttachments,
   removeAttachment,
+  generateSignedDownloadUrl,
+  verifySignedToken,
 };

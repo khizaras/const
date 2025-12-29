@@ -18,7 +18,11 @@ const {
   dailyLogAttachmentRouter,
   fileRouter,
 } = require("../modules/files/file.routes");
-const { inboundRouter } = require("../modules/inbound/email.routes");
+const inboundEmailModule = require("../modules/inbound/email.routes");
+const inboundRouter = inboundEmailModule.inboundRouter || inboundEmailModule;
+const {
+  notificationRouter,
+} = require("../modules/notifications/notification.routes");
 const { setupRouter } = require("../modules/setup/setup.routes");
 
 const apiRouter = express.Router();
@@ -52,5 +56,6 @@ apiRouter.use(
 );
 apiRouter.use("/projects/:projectId/files", projectFileRouter);
 apiRouter.use("/files", fileRouter);
+apiRouter.use("/notifications", notificationRouter);
 
 module.exports = { apiRouter };

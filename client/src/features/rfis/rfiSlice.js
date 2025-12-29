@@ -6,6 +6,8 @@ const initialFilters = {
   priority: undefined,
   search: "",
   dueBefore: undefined,
+  assignedTo: undefined,
+  ballInCourt: undefined,
 };
 
 export const fetchRfis = createAsyncThunk(

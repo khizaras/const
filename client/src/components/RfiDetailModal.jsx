@@ -18,6 +18,7 @@ import {
   Image,
   Select,
   Popconfirm,
+  Timeline,
 } from "antd";
 import {
   DownloadOutlined,
@@ -32,8 +33,10 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
 } from "@ant-design/icons";
+import RfiWorkflowStepper from "./RfiWorkflowStepper";
 import dayjs from "dayjs";
 import apiClient from "../services/apiClient";
+import { downloadFileWithSignedUrl } from "../services/downloadUtils";
 import { useSelector } from "react-redux";
 
 const { TextArea } = Input;
@@ -224,16 +227,7 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
 
   const handleDownloadFile = async (fileId, filename) => {
     try {
-      const response = await apiClient.get(`/files/${fileId}/download`, {
-        responseType: "blob",
-      });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", filename);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      await downloadFileWithSignedUrl(fileId, filename);
     } catch (error) {
       message.error("Failed to download file");
     }
@@ -359,6 +353,19 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
       urgent: "red",
     };
     return colors[priority] || "default";
+  };
+
+  const getActionColor = (action) => {
+    const map = {
+      create: "green",
+      assign: "blue",
+      status_change: "orange",
+      response: "purple",
+      response_added: "purple",
+      update: "blue",
+      void: "red",
+    };
+    return map[action] || "gray";
   };
 
   if (!rfi) {
@@ -516,6 +523,12 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
           }}
         >
           <div style={{ maxHeight: "70vh", overflowY: "auto" }}>
+            <RfiWorkflowStepper
+              projectId={projectId}
+              rfiId={rfiId}
+              currentStatus={rfi.status}
+              onStatusChange={() => loadRfiDetail()}
+            />
             <Title level={4}>{rfi.title}</Title>
 
             <Descriptions
@@ -729,14 +742,15 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
             </Card>
 
             <Card title="Activity" size="small" style={{ marginBottom: 16 }}>
-              <List
-                dataSource={auditLogs}
-                locale={{ emptyText: "No activity yet." }}
-                renderItem={(item) => (
-                  <List.Item>
-                    <List.Item.Meta
-                      title={
-                        <Space>
+              {auditLogs.length === 0 ? (
+                <Text type="secondary">No activity yet.</Text>
+              ) : (
+                <Timeline
+                  items={auditLogs.map((item) => ({
+                    color: getActionColor(item.action),
+                    children: (
+                      <div>
+                        <Space style={{ marginBottom: 2 }}>
                           <Text strong>{item.action}</Text>
                           <Text type="secondary" style={{ fontSize: 12 }}>
                             {dayjs(item.created_at).format(
@@ -744,8 +758,6 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
                             )}
                           </Text>
                         </Space>
-                      }
-                      description={
                         <div
                           style={{ fontSize: 12, color: "var(--brand-muted)" }}
                         >
@@ -756,11 +768,11 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
                             }`}</span>
                           )}
                         </div>
-                      }
-                    />
-                  </List.Item>
-                )}
-              />
+                      </div>
+                    ),
+                  }))}
+                />
+              )}
             </Card>
 
             {rfi.responses && rfi.responses.length > 0 && (
