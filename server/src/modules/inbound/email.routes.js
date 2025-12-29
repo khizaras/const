@@ -7,4 +7,4 @@ router.post("/email", handleInbound);
 // Test-only helper to fetch RFI by number without auth
 router.get("/test/rfi/:projectId/:number", getRfiByNumberPublic);
 
-module.exports = router;
+module.exports = { inboundRouter: router };

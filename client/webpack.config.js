@@ -21,7 +21,7 @@ module.exports = (env, argv) => {
     mode,
     // Avoid eval-based source maps to satisfy CSP without unsafe-eval
     devtool: isDev ? "source-map" : "source-map",
-    watch: isDev,
+    devtool: isDev ? "source-map" : "source-map",
     watchOptions: isDev
       ? {
           ignored: /node_modules/,
@@ -86,5 +86,11 @@ module.exports = (env, argv) => {
         ),
       }),
     ],
+    optimization: {
+      splitChunks: {
+        chunks: "all",
+      },
+      runtimeChunk: "single",
+    },
   };
 };

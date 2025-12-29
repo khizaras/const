@@ -18,6 +18,7 @@ const {
   dailyLogAttachmentRouter,
   fileRouter,
 } = require("../modules/files/file.routes");
+const { inboundRouter } = require("../modules/inbound/email.routes");
 const { setupRouter } = require("../modules/setup/setup.routes");
 
 const apiRouter = express.Router();
@@ -26,6 +27,9 @@ apiRouter.use("/auth", authRouter);
 
 // Setup/installer endpoints are gated by env + token (no auth required)
 apiRouter.use("/setup", setupRouter);
+
+// Public inbound email webhook (provider should secure via signing/allow-list)
+apiRouter.use("/inbound", inboundRouter);
 
 apiRouter.use(requireAuth);
 apiRouter.get("/projects", listProjects);

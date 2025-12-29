@@ -55,6 +55,7 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
   const [commenting, setCommenting] = useState(false);
   const [attaching, setAttaching] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({});
+  const [auditLogs, setAuditLogs] = useState([]);
   const projectId = useSelector((state) => state.projects.activeProjectId);
   const project = useSelector((state) => state.projects.activeProject);
   const user = useSelector((state) => state.auth.user);
@@ -73,6 +74,10 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
         `/projects/${projectId}/rfis/${rfiId}`
       );
       setRfi(response.data);
+      const auditsRes = await apiClient.get(
+        `/projects/${projectId}/rfis/${rfiId}/audit`
+      );
+      setAuditLogs(auditsRes.data?.data || []);
     } catch (error) {
       message.error("Failed to load RFI details");
     } finally {
@@ -721,6 +726,41 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
               ) : (
                 <Text type="secondary">No attachments yet.</Text>
               )}
+            </Card>
+
+            <Card title="Activity" size="small" style={{ marginBottom: 16 }}>
+              <List
+                dataSource={auditLogs}
+                locale={{ emptyText: "No activity yet." }}
+                renderItem={(item) => (
+                  <List.Item>
+                    <List.Item.Meta
+                      title={
+                        <Space>
+                          <Text strong>{item.action}</Text>
+                          <Text type="secondary" style={{ fontSize: 12 }}>
+                            {dayjs(item.created_at).format(
+                              "MMM D, YYYY h:mm A"
+                            )}
+                          </Text>
+                        </Space>
+                      }
+                      description={
+                        <div
+                          style={{ fontSize: 12, color: "var(--brand-muted)" }}
+                        >
+                          {item.field ? `Field: ${item.field}` : ""}
+                          {item.first_name && (
+                            <span>{` • By ${item.first_name} ${
+                              item.last_name || ""
+                            }`}</span>
+                          )}
+                        </div>
+                      }
+                    />
+                  </List.Item>
+                )}
+              />
             </Card>
 
             {rfi.responses && rfi.responses.length > 0 && (

@@ -18,6 +18,7 @@ const {
   addRfiComment,
   deleteRfiComment,
   getRfiMetrics,
+  listRfiAuditLogs,
 } = require("./rfi.service");
 const { asyncHandler } = require("../../utils/asyncHandler");
 
@@ -103,6 +104,12 @@ const metrics = asyncHandler(async (req, res) => {
   res.json(data);
 });
 
+const auditLogs = asyncHandler(async (req, res) => {
+  const rfiId = Number(req.params.rfiId);
+  const logs = await listRfiAuditLogs(req.project.id, rfiId);
+  res.json({ data: logs });
+});
+
 module.exports = {
   list,
   create,
@@ -115,4 +122,5 @@ module.exports = {
   addComment,
   deleteComment,
   metrics,
+  auditLogs,
 };

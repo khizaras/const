@@ -23,6 +23,7 @@ projectRfiRouter.get("/", list);
 projectRfiRouter.post("/", create);
 projectRfiRouter.get("/metrics", metrics);
 projectRfiRouter.get("/:rfiId", detail);
+projectRfiRouter.get("/:rfiId/audit", auditLogs);
 projectRfiRouter.patch("/:rfiId", update);
 projectRfiRouter.post("/:rfiId/responses", respond);
 projectRfiRouter.post("/:rfiId/watchers", addWatcherHandler);

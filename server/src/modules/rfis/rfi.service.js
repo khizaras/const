@@ -825,6 +825,20 @@ const getRfiMetrics = async (projectId) => {
   };
 };
 
+const listRfiAuditLogs = async (projectId, rfiId) => {
+  await fetchRfiRecord(projectId, rfiId);
+  const [rows] = await pool.execute(
+    `SELECT al.id, al.action, al.field, al.old_value, al.new_value, al.created_at,
+            u.first_name, u.last_name
+       FROM rfi_audit_logs al
+       LEFT JOIN users u ON u.id = al.user_id
+      WHERE al.project_id = ? AND al.rfi_id = ?
+      ORDER BY al.created_at DESC`,
+    [projectId, rfiId]
+  );
+  return rows;
+};
+
 const removeWatcher = async (projectId, rfiId, watcherUserId) => {
   await fetchRfiRecord(projectId, rfiId);
   await pool.execute(
@@ -846,4 +860,5 @@ module.exports = {
   addRfiComment,
   deleteRfiComment,
   getRfiMetrics,
+  listRfiAuditLogs,
 };

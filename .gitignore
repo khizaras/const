@@ -7,6 +7,5 @@ dist/
 .playwright-mcp/
 uploads/
 .copy
-.env.example
 scripts/kill-port.ps1
 scripts/kill-port.sh
