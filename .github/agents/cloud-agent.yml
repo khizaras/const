@@ -1,0 +1,42 @@
+name: cloud-agent
+description: Cloud-based agent for distributed task execution
+version: 1.0.0
+
+# Enable cloud agent delegation
+delegation:
+  enabled: true
+  mode: cloud
+  
+# Cloud agent configuration
+cloud:
+  provider: github-copilot
+  capabilities:
+    - code-generation
+    - code-review
+    - testing
+    - documentation
+    - refactoring
+  
+# Agent behavior
+behavior:
+  auto_delegate: true
+  prefer_cloud_execution: true
+  fallback_to_local: false
+
+# Resource limits
+resources:
+  max_concurrent_tasks: 5
+  timeout_seconds: 300
+  
+# Security settings
+security:
+  require_authentication: true
+  allowed_operations:
+    - read
+    - write
+    - execute
+  restricted_paths:
+    - .env
+    - .env.*
+    - "*.key"
+    - "*.pem"
