@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import (css) url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
 :root {
   --brand-primary: #0066ff;
@@ -23,10 +23,10 @@
   --surface-secondary: #fafbfc;
   --surface-overlay: #ffffff;
 
-  --shadow-sm: 0 1px 3px rgba(9, 30, 66, 0.08);
-  --shadow-md: 0 4px 12px rgba(9, 30, 66, 0.12);
-  --shadow-lg: 0 8px 24px rgba(9, 30, 66, 0.15);
-  --shadow-xl: 0 16px 48px rgba(9, 30, 66, 0.18);
+  --shadow-sm: 0 1px 3px rgba(9, 30, 66, 0.08), 0 1px 2px rgba(9, 30, 66, 0.04);
+  --shadow-md: 0 4px 12px rgba(9, 30, 66, 0.12), 0 2px 4px rgba(9, 30, 66, 0.06);
+  --shadow-lg: 0 8px 24px rgba(9, 30, 66, 0.15), 0 4px 8px rgba(9, 30, 66, 0.08);
+  --shadow-xl: 0 16px 48px rgba(9, 30, 66, 0.18), 0 8px 16px rgba(9, 30, 66, 0.1);
 
   --radius-sm: 6px;
   --radius-md: 10px;
@@ -314,22 +314,34 @@ body {
 
 .hero-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: 1fr 400px;
   gap: var(--space-2xl);
   margin-bottom: var(--space-3xl);
-  position: relative;
-  padding-right: 440px;
+  align-items: start;
 }
 
 .hero-grid__primary {
-  background: var(--surface-primary);
+  background: linear-gradient(135deg, var(--surface-primary) 0%, var(--neutral-50) 100%);
   border-radius: var(--radius-xl);
-  padding: var(--space-2xl);
-  box-shadow: var(--shadow-md);
+  padding: var(--space-3xl);
+  box-shadow: var(--shadow-lg);
   border: 1px solid var(--neutral-200);
   display: flex;
   flex-direction: column;
   gap: var(--space-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-grid__primary::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(0, 102, 255, 0.06) 0%, transparent 70%);
+  pointer-events: none;
 }
 
 .hero-grid__eyebrow {
@@ -340,11 +352,13 @@ body {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--neutral-600);
-  background: var(--neutral-100);
-  padding: 6px 12px;
+  color: var(--brand-primary);
+  background: linear-gradient(135deg, rgba(0, 102, 255, 0.1), rgba(0, 102, 255, 0.05));
+  padding: 8px 16px;
   border-radius: 999px;
   width: fit-content;
+  border: 1px solid rgba(0, 102, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 102, 255, 0.1);
 }
 
 .hero-grid__title {
@@ -413,17 +427,37 @@ body {
 }
 
 .metric-tile {
-  background: var(--neutral-100);
+  background: linear-gradient(135deg, var(--surface-primary) 0%, var(--neutral-50) 100%);
   border: 1px solid var(--neutral-200);
   border-radius: var(--radius-lg);
-  padding: var(--space-lg);
-  transition: all 0.2s ease;
+  padding: var(--space-xl);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.metric-tile::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--brand-primary), var(--brand-accent));
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .metric-tile:hover {
   background: var(--surface-primary);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px);
+  border-color: var(--brand-primary);
+}
+
+.metric-tile:hover::before {
+  opacity: 1;
 }
 
 .metric-tile span {
@@ -457,26 +491,20 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--space-lg);
-  width: 400px;
-  min-width: 360px;
-  max-width: 420px;
-  position: absolute;
-  top: 0;
-  right: 0;
 }
 
 .hero-insight-card {
   width: 100%;
   border-radius: var(--radius-xl) !important;
   border: 1px solid var(--neutral-200) !important;
-  box-shadow: var(--shadow-md);
-  background: var(--surface-primary) !important;
+  box-shadow: var(--shadow-lg);
+  background: linear-gradient(135deg, var(--surface-primary) 0%, var(--neutral-50) 100%) !important;
 }
 
 .hero-insight-card .ant-card-body {
   display: flex;
   flex-direction: column;
-  gap: var(--space-lg);
+  gap: var(--space-xl);
   padding: var(--space-2xl);
 }
 
@@ -567,17 +595,37 @@ body {
 }
 
 .stat-grid__item {
-  background: var(--surface-primary);
-  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--surface-primary) 0%, var(--neutral-50) 100%);
+  border-radius: var(--radius-xl);
   padding: var(--space-2xl);
   border: 1px solid var(--neutral-200);
-  box-shadow: var(--shadow-sm);
-  transition: all 0.2s ease;
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-grid__item::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, var(--brand-primary), var(--brand-accent));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
 }
 
 .stat-grid__item:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
+  box-shadow: var(--shadow-xl);
+  transform: translateY(-4px);
+  border-color: var(--brand-primary);
+}
+
+.stat-grid__item:hover::after {
+  transform: scaleX(1);
 }
 
 .stat-grid__label {
@@ -610,20 +658,23 @@ body {
 .table-card,
 .ant-card.panel-card {
   background: var(--surface-primary) !important;
-  border-radius: var(--radius-lg) !important;
+  border-radius: var(--radius-xl) !important;
   border: 1px solid var(--neutral-200) !important;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.2s ease;
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .panel-card:hover,
 .table-card:hover {
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--neutral-300);
 }
 
 .filter-panel {
   margin-bottom: var(--space-2xl);
   padding: var(--space-2xl);
+  background: linear-gradient(135deg, var(--surface-primary) 0%, var(--neutral-50) 100%) !important;
+  box-shadow: var(--shadow-lg) !important;
 }
 
 .filter-panel__header {
@@ -680,100 +731,126 @@ body {
 }
 
 .table-card .ant-table-thead > tr > th {
-  background: var(--neutral-100);
-  border-bottom: 2px solid var(--neutral-300);
-  color: var(--neutral-700);
+  background: linear-gradient(135deg, var(--neutral-100) 0%, var(--neutral-50) 100%);
+  border-bottom: 2px solid var(--brand-primary);
+  color: var(--neutral-800);
   font-weight: 700;
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: var(--space-md) var(--space-lg);
+  padding: var(--space-lg) var(--space-xl);
 }
 
 .table-card .ant-table-tbody > tr > td {
   border-bottom: 1px solid var(--neutral-200);
-  padding: var(--space-lg);
+  padding: var(--space-xl);
   color: var(--neutral-800);
   font-weight: 500;
 }
 
 .table-card .ant-table-tbody > tr:hover > td {
-  background: var(--neutral-100);
+  background: linear-gradient(135deg, rgba(0, 102, 255, 0.03), rgba(0, 102, 255, 0.05));
+  box-shadow: inset 3px 0 0 var(--brand-primary);
 }
 
 .rfi-number-pill {
   display: inline-flex;
   align-items: center;
-  padding: 6px 14px;
+  padding: 8px 16px;
   border-radius: 999px;
-  border: 1px solid var(--neutral-300);
-  background: var(--neutral-100);
+  border: 2px solid var(--brand-primary);
+  background: linear-gradient(135deg, rgba(0, 102, 255, 0.1), rgba(0, 102, 255, 0.05));
   font-weight: 700;
   font-size: 13px;
-  color: var(--neutral-900);
+  color: var(--brand-primary);
+  box-shadow: 0 2px 8px rgba(0, 102, 255, 0.15);
+  transition: all 0.2s ease;
+}
+
+.rfi-number-pill:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 102, 255, 0.25);
 }
 
 .status-pill {
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
-  padding: 6px 12px;
+  padding: 8px 16px;
   font-size: 12px;
   text-transform: uppercase;
   font-weight: 700;
   letter-spacing: 0.03em;
   border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.status-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .status-pill--open {
-  background: rgba(255, 107, 53, 0.12);
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.15), rgba(255, 107, 53, 0.1));
   color: #d84315;
+  border: 2px solid rgba(255, 107, 53, 0.3);
 }
 
 .status-pill--answered {
-  background: rgba(0, 102, 255, 0.12);
+  background: linear-gradient(135deg, rgba(0, 102, 255, 0.15), rgba(0, 102, 255, 0.1));
   color: var(--brand-primary);
+  border: 2px solid rgba(0, 102, 255, 0.3);
 }
 
 .status-pill--closed {
-  background: rgba(0, 200, 83, 0.12);
+  background: linear-gradient(135deg, rgba(0, 200, 83, 0.15), rgba(0, 200, 83, 0.1));
   color: #00875a;
+  border: 2px solid rgba(0, 200, 83, 0.3);
 }
 
 .status-pill--void {
   background: var(--neutral-200);
   color: var(--neutral-600);
+  border: 2px solid var(--neutral-300);
 }
 
 .priority-pill {
   display: inline-flex;
   align-items: center;
-  border-radius: var(--radius-sm);
-  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  padding: 8px 16px;
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
   background: var(--neutral-100);
-  border: 1px solid var(--neutral-300);
+  border: 2px solid var(--neutral-300);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.2s ease;
+}
+
+.priority-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .priority-pill--urgent {
   color: var(--brand-danger);
-  background: rgba(255, 61, 0, 0.08);
-  border-color: rgba(255, 61, 0, 0.3);
+  background: linear-gradient(135deg, rgba(255, 61, 0, 0.12), rgba(255, 61, 0, 0.08));
+  border-color: rgba(255, 61, 0, 0.4);
 }
 
 .priority-pill--high {
   color: #d84315;
-  background: rgba(255, 107, 53, 0.08);
-  border-color: rgba(255, 107, 53, 0.3);
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.12), rgba(255, 107, 53, 0.08));
+  border-color: rgba(255, 107, 53, 0.4);
 }
 
 .priority-pill--medium {
   color: var(--brand-primary);
-  background: rgba(0, 102, 255, 0.08);
-  border-color: rgba(0, 102, 255, 0.3);
+  background: linear-gradient(135deg, rgba(0, 102, 255, 0.12), rgba(0, 102, 255, 0.08));
+  border-color: rgba(0, 102, 255, 0.4);
 }
 
 .priority-pill--low {
@@ -875,15 +952,11 @@ body {
 @media (max-width: 1400px) {
   .hero-grid {
     grid-template-columns: 1fr;
-    padding-right: 0;
+    gap: var(--space-2xl);
   }
 
   .hero-grid__secondary {
-    position: static;
     width: 100%;
-    max-width: 100%;
-    min-width: auto;
-    margin-top: var(--space-2xl);
   }
 }
 
