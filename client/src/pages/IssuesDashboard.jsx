@@ -281,16 +281,26 @@ const IssuesDashboard = () => {
 
   const handleBulkClose = async () => {
     if (!projectId || selectedRowKeys.length === 0) return;
-    try {
-      await apiClient.post(`/projects/${projectId}/issues/bulk-close`, {
-        issueIds: selectedRowKeys,
-      });
-      message.success(`Closed ${selectedRowKeys.length} issue(s)`);
-      setSelectedRowKeys([]);
-      loadIssues();
-    } catch (error) {
-      message.error("Failed to close issues");
-    }
+    
+    Modal.confirm({
+      title: `Close ${selectedRowKeys.length} Issue(s)?`,
+      content: `Are you sure you want to close ${selectedRowKeys.length} selected issue(s)? This action cannot be undone.`,
+      okText: "Yes, Close",
+      okType: "danger",
+      cancelText: "Cancel",
+      onOk: async () => {
+        try {
+          await apiClient.post(`/projects/${projectId}/issues/bulk-close`, {
+            issueIds: selectedRowKeys,
+          });
+          message.success(`Closed ${selectedRowKeys.length} issue(s)`);
+          setSelectedRowKeys([]);
+          loadIssues();
+        } catch (error) {
+          message.error("Failed to close issues");
+        }
+      },
+    });
   };
 
   const handleExportCSV = async () => {

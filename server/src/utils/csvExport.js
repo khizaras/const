@@ -61,7 +61,19 @@ function escapeCSVField(field) {
  * @returns {any} Value at path
  */
 function getNestedValue(obj, path) {
-  return path.split('.').reduce((acc, part) => acc?.[part], obj);
+  if (!obj || !path) return undefined;
+  
+  const parts = path.split('.');
+  let current = obj;
+  
+  for (const part of parts) {
+    if (current === null || current === undefined) {
+      return undefined;
+    }
+    current = current[part];
+  }
+  
+  return current;
 }
 
 /**

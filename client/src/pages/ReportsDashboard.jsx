@@ -41,12 +41,16 @@ const ReportsDashboard = () => {
   const loadReports = async () => {
     setLoading(true);
     try {
-      // Load RFI metrics
-      const rfiRes = await apiClient.get(`/projects/${projectId}/rfis/metrics`);
+      // Load all metrics in parallel for better performance
+      const [rfiRes, issuesRes, logsRes] = await Promise.all([
+        apiClient.get(`/projects/${projectId}/rfis/metrics`),
+        apiClient.get(`/projects/${projectId}/issues`),
+        apiClient.get(`/projects/${projectId}/daily-logs`),
+      ]);
+
       setRfiMetrics(rfiRes.data.data || {});
 
-      // Load Issues stats
-      const issuesRes = await apiClient.get(`/projects/${projectId}/issues`);
+      // Process Issues stats
       const issues = issuesRes.data.data || [];
       const issuesByStatus = issues.reduce((acc, issue) => {
         acc[issue.status] = (acc[issue.status] || 0) + 1;
@@ -63,8 +67,7 @@ const ReportsDashboard = () => {
         overdue,
       });
 
-      // Load Daily Logs stats
-      const logsRes = await apiClient.get(`/projects/${projectId}/daily-logs`);
+      // Process Daily Logs stats
       const logs = logsRes.data.data || [];
       const logsByStatus = logs.reduce((acc, log) => {
         acc[log.status] = (acc[log.status] || 0) + 1;
