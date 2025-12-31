@@ -21,7 +21,7 @@ cloud:
 behavior:
   auto_delegate: true
   prefer_cloud_execution: true
-  fallback_to_local: false
+  fallback_to_local: true
 
 # Resource limits
 resources:
@@ -40,3 +40,8 @@ security:
     - .env.*
     - "*.key"
     - "*.pem"
+    - "*.p12"
+    - "*.pfx"
+    - config/database.yml
+    - secrets/*
+    - private/*
