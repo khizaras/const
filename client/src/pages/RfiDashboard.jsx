@@ -80,7 +80,7 @@ const RfiDashboard = () => {
   // No project selected state
   if (!projectId) {
     return (
-      <div className="rfi-dashboard">
+      <div className="page-container rfi-dashboard">
         <div className="empty-project-state">
           <InboxOutlined className="empty-icon" />
           <h2>No Project Selected</h2>
@@ -98,7 +98,7 @@ const RfiDashboard = () => {
   }
 
   return (
-    <div className="rfi-dashboard">
+    <div className="page-container rfi-dashboard">
       {/* Page Header */}
       <header className="page-header">
         <div className="page-header__left">

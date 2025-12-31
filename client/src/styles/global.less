@@ -74,7 +74,7 @@
   --space-16: 64px;
 
   // Typography
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", monospace;
 
@@ -108,6 +108,9 @@
   --z-modal: 1050;
   --z-popover: 1060;
   --z-tooltip: 1070;
+  
+  // Layout
+  --header-height: 120px;
 }
 
 // ============================================
@@ -135,9 +138,6 @@ body {
   min-height: 100vh;
 }
 
-// Import Inter font
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
-
 // ============================================
 // 3. APP SHELL & LAYOUT
 // ============================================
@@ -153,13 +153,14 @@ body {
   left: 0;
   right: 0;
   z-index: var(--z-fixed);
-  height: 64px !important;
+  height: auto !important;
+  min-height: 64px !important;
   background: linear-gradient(
     135deg,
     var(--brand-primary) 0%,
     #2d4a6f 100%
   ) !important;
-  padding: 0 !important;
+  padding: var(--space-3) 0 !important;
   box-shadow: var(--shadow-lg);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 
@@ -168,9 +169,59 @@ body {
     margin: 0 auto;
     height: 100%;
     display: flex;
-    align-items: center;
+    flex-direction: column;
     padding: 0 var(--space-6);
-    gap: var(--space-6);
+    gap: var(--space-3);
+  }
+}
+
+.header-context {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding-top: var(--space-2);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.project-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  
+  .badge-label {
+    font-size: var(--text-xs);
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .badge-value {
+    font-size: var(--text-sm);
+    color: white;
+    font-weight: 500;
+  }
+}
+
+.status-indicators {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-left: auto;
+}
+
+.status-dot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: rgba(255, 255, 255, 0.7);
+  
+  &--live {
+    color: #52c41a;
+  }
+  
+  &--sync {
+    color: #1890ff;
   }
 }
 
@@ -365,10 +416,11 @@ body {
 }
 
 // Main Content Area
-.shell-content {
-  margin-top: 64px;
+.shell-content,
+.page-shell {
+  margin-top: var(--header-height);
   padding: var(--space-6);
-  min-height: calc(100vh - 64px);
+  min-height: calc(100vh - var(--header-height));
   background: var(--bg-primary);
 }
 
@@ -637,6 +689,12 @@ body {
   .ant-card-body {
     padding: var(--space-6);
   }
+  
+  &.table-card {
+    .ant-card-body {
+      padding: 0;
+    }
+  }
 }
 
 .hero-insight-card {
@@ -780,7 +838,8 @@ body {
 // 7. STATUS BADGES & TAGS
 // ============================================
 
-.status-badge {
+.status-badge,
+.status-pill {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
@@ -1527,6 +1586,30 @@ body {
   }
 }
 
+.rfi-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    
+    &::before {
+      content: "•";
+      margin-right: var(--space-1);
+    }
+    
+    &:first-child::before {
+      display: none;
+    }
+  }
+}
+
 .rfi-row {
   &--overdue {
     background: rgba(239, 68, 68, 0.03) !important;
@@ -1774,6 +1857,7 @@ body {
 
 .rfi-dashboard {
   animation: fadeIn 0.3s ease-out;
+  width: 100%;
 }
 
 // Empty Project State
