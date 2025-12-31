@@ -686,6 +686,12 @@ body {
   .ant-card-body {
     padding: var(--space-6);
   }
+  
+  &.table-card {
+    .ant-card-body {
+      padding: 0;
+    }
+  }
 }
 
 .hero-insight-card {
@@ -829,7 +835,8 @@ body {
 // 7. STATUS BADGES & TAGS
 // ============================================
 
-.status-badge {
+.status-badge,
+.status-pill {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
@@ -1573,6 +1580,30 @@ body {
   .ant-table-cell {
     vertical-align: top;
     padding: var(--space-4) !important;
+  }
+}
+
+.rfi-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    
+    &::before {
+      content: "•";
+      margin-right: var(--space-1);
+    }
+    
+    &:first-child::before {
+      display: none;
+    }
   }
 }
 
