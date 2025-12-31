@@ -25,8 +25,8 @@ behavior:
 
 # Resource limits
 resources:
-  max_concurrent_tasks: 5
-  timeout_seconds: 300
+  max_concurrent_tasks: 5  # Maximum number of parallel cloud agent tasks
+  timeout_seconds: 300      # Task timeout (5 minutes) - tasks exceeding this are terminated
   
 # Security settings
 security:
@@ -36,12 +36,23 @@ security:
     - write
     - execute
   restricted_paths:
+    # Environment and configuration files
     - .env
     - .env.*
+    - config/*.conf
+    - config/database.yml
+    # Private keys and certificates
     - "*.key"
     - "*.pem"
     - "*.p12"
     - "*.pfx"
-    - config/database.yml
+    - "*.crt"
+    - "*.cer"
+    - "*.token"
+    # SSH keys
+    - id_rsa*
+    - known_hosts
+    - .ssh/*
+    # Secret directories
     - secrets/*
     - private/*
