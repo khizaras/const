@@ -40,6 +40,8 @@
   --space-xl: 32px;
   --space-2xl: 48px;
   --space-3xl: 64px;
+
+  --gradient-primary-accent: linear-gradient(90deg, var(--brand-primary), var(--brand-accent));
 }
 
 * {
@@ -444,7 +446,7 @@ body {
   left: 0;
   width: 100%;
   height: 3px;
-  background: linear-gradient(90deg, var(--brand-primary), var(--brand-accent));
+  background: var(--gradient-primary-accent);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -612,7 +614,7 @@ body {
   left: 0;
   width: 100%;
   height: 4px;
-  background: linear-gradient(90deg, var(--brand-primary), var(--brand-accent));
+  background: var(--gradient-primary-accent);
   transform: scaleX(0);
   transform-origin: left;
   transition: transform 0.3s ease;
