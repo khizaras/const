@@ -4,7 +4,7 @@
  */
 const { pool } = require("../../db/pool");
 const { createNotification } = require("../notifications/notification.service");
-const logger = require("../../logger");
+const { logger } = require("../../logger");
 
 // SLA thresholds in days
 const SLA_THRESHOLDS = {

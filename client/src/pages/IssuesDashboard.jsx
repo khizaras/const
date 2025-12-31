@@ -292,7 +292,7 @@ const IssuesDashboard = () => {
   }
 
   return (
-    <div>
+    <div className="page-container">
       <div className="stat-grid" style={{ marginBottom: "1.5rem" }}>
         <div className="stat-grid__item">
           <div className="stat-grid__label">Issues</div>

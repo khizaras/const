@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { Steps, Button, Space, Popconfirm, Tag } from "antd";
+import { Steps, Button, Space, Popconfirm, Tag, Tooltip, Badge } from "antd";
+import {
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  SyncOutlined,
+  CloseCircleOutlined,
+  StopOutlined,
+  RightOutlined,
+} from "@ant-design/icons";
 import apiClient from "../services/apiClient";
 
 const TRANSITIONS = {
@@ -8,6 +16,14 @@ const TRANSITIONS = {
   answered: ["closed", "open", "void"],
   closed: ["open"],
   void: ["open"],
+};
+
+const STATUS_ICONS = {
+  open: <ClockCircleOutlined />,
+  in_review: <SyncOutlined spin />,
+  answered: <CheckCircleOutlined />,
+  closed: <CheckCircleOutlined />,
+  void: <StopOutlined />,
 };
 
 const RfiWorkflowStepper = ({
@@ -53,12 +69,18 @@ const RfiWorkflowStepper = ({
   if (!workflow.length) return null;
 
   return (
-    <div style={{ marginBottom: 24 }}>
+    <div className="workflow-stepper">
+      <div className="workflow-stepper__header">
+        <Badge status="processing" />
+        <span className="workflow-stepper__title">Workflow Status</span>
+      </div>
       <Steps
         current={currentIndex >= 0 ? currentIndex : 0}
         size="small"
+        className="workflow-steps"
         items={workflow.map((step) => ({
           title: step.label,
+          icon: STATUS_ICONS[step.key],
           status:
             step.key === currentStatus
               ? "process"
@@ -67,31 +89,42 @@ const RfiWorkflowStepper = ({
               : "wait",
         }))}
       />
-      <Space style={{ marginTop: 16 }} wrap>
-        {allowed.map((nextStatus) => {
-          const stepInfo = workflow.find((s) => s.key === nextStatus);
-          const label = stepInfo?.label || nextStatus;
-          const isDanger = nextStatus === "void";
-          return (
-            <Popconfirm
-              key={nextStatus}
-              title={`Transition to ${label}?`}
-              onConfirm={() => handleTransition(nextStatus)}
-              okText="Yes"
-              cancelText="No"
-            >
-              <Button
-                size="small"
-                type={isDanger ? "default" : "primary"}
-                danger={isDanger}
-                loading={loading}
+      <div className="workflow-stepper__actions">
+        <span className="workflow-stepper__actions-label">
+          Available Transitions:
+        </span>
+        <Space wrap>
+          {allowed.map((nextStatus) => {
+            const stepInfo = workflow.find((s) => s.key === nextStatus);
+            const label = stepInfo?.label || nextStatus;
+            const isDanger = nextStatus === "void";
+            return (
+              <Popconfirm
+                key={nextStatus}
+                title={`Transition to ${label}?`}
+                onConfirm={() => handleTransition(nextStatus)}
+                okText="Yes"
+                cancelText="No"
               >
-                {label}
-              </Button>
-            </Popconfirm>
-          );
-        })}
-      </Space>
+                <Tooltip title={`Move to ${label} status`}>
+                  <Button
+                    size="small"
+                    type={isDanger ? "default" : "primary"}
+                    danger={isDanger}
+                    loading={loading}
+                    icon={<RightOutlined />}
+                    className={`workflow-btn ${
+                      isDanger ? "workflow-btn--danger" : ""
+                    }`}
+                  >
+                    {label}
+                  </Button>
+                </Tooltip>
+              </Popconfirm>
+            );
+          })}
+        </Space>
+      </div>
     </div>
   );
 };

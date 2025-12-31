@@ -9,11 +9,18 @@ import {
   Col,
   Segmented,
   DatePicker,
+  Space,
+  Tooltip,
+  Badge,
 } from "antd";
 import {
   SearchOutlined,
   ReloadOutlined,
   FilterOutlined,
+  CalendarOutlined,
+  UserOutlined,
+  TagOutlined,
+  ThunderboltOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useDispatch, useSelector } from "react-redux";
@@ -99,14 +106,26 @@ const RfiFilters = () => {
   return (
     <Card className="panel-card filter-panel" bordered={false}>
       <div className="filter-panel__header">
-        <div>
-          <strong>Filter RFIs</strong>
-          <br />
-          <small>{meta.total} records synced from field + design teams</small>
+        <div className="filter-panel__title">
+          <Space>
+            <FilterOutlined className="filter-icon" />
+            <strong>Filter RFIs</strong>
+          </Space>
+          <small className="filter-panel__subtitle">
+            <Badge status="success" />
+            {meta.total} records synced from field + design teams
+          </small>
         </div>
-        <Button type="text" icon={<ReloadOutlined />} onClick={handleReset}>
-          Reset
-        </Button>
+        <Tooltip title="Reset all filters">
+          <Button
+            type="text"
+            icon={<ReloadOutlined />}
+            onClick={handleReset}
+            className="filter-reset-btn"
+          >
+            Reset
+          </Button>
+        </Tooltip>
       </div>
 
       <Segmented
@@ -118,7 +137,7 @@ const RfiFilters = () => {
           form.setFieldsValue({ status });
           handleFinish({ ...form.getFieldsValue(), status });
         }}
-        style={{ marginBottom: "1.25rem" }}
+        className="filter-segmented"
       />
 
       <Form
@@ -130,7 +149,14 @@ const RfiFilters = () => {
       >
         <Row gutter={16}>
           <Col xs={24} md={8}>
-            <Form.Item name="priority" label="Priority">
+            <Form.Item
+              name="priority"
+              label={
+                <span className="filter-label">
+                  <ThunderboltOutlined /> Priority
+                </span>
+              }
+            >
               <Select
                 options={[
                   { value: undefined, label: "All" },

@@ -1,6 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { Row, Col, Statistic, Card, Progress, List, Tag, Button } from "antd";
-import { PlusOutlined } from "@ant-design/icons";
+import { Card, Progress, Tag, Button, Tooltip, Empty } from "antd";
+import {
+  PlusOutlined,
+  ClockCircleOutlined,
+  FireOutlined,
+  CheckCircleOutlined,
+  ExclamationCircleOutlined,
+  FileTextOutlined,
+  CalendarOutlined,
+  WarningOutlined,
+  InboxOutlined,
+  ThunderboltOutlined,
+} from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -28,314 +39,274 @@ const RfiDashboard = () => {
     dispatch(fetchRfis());
     dispatch(fetchRfiMetrics());
   };
-  const fallbackCounts = {
-    open: items.filter((rfi) => rfi.status === "open").length,
-    answered: items.filter((rfi) => rfi.status === "answered").length,
-    closed: items.filter((rfi) => rfi.status === "closed").length,
-    void: items.filter((rfi) => rfi.status === "void").length,
-  };
-  const fallbackPriority = {
-    urgent: items.filter((rfi) => rfi.priority === "urgent").length,
-    high: items.filter((rfi) => rfi.priority === "high").length,
-    medium: items.filter((rfi) => rfi.priority === "medium").length,
-    low: items.filter((rfi) => rfi.priority === "low").length,
-  };
 
+  // Calculate metrics
   const m = metrics.data;
-  const openCount = m?.statusCounts?.open ?? fallbackCounts.open;
-  const answeredCount = m?.statusCounts?.answered ?? fallbackCounts.answered;
-  const closedCount = m?.statusCounts?.closed ?? fallbackCounts.closed;
-  const urgentCount = m?.priorityCounts?.urgent ?? fallbackPriority.urgent;
+  const openCount =
+    m?.statusCounts?.open ??
+    items.filter((rfi) => rfi.status === "open").length;
+  const answeredCount =
+    m?.statusCounts?.answered ??
+    items.filter((rfi) => rfi.status === "answered").length;
+  const closedCount =
+    m?.statusCounts?.closed ??
+    items.filter((rfi) => rfi.status === "closed").length;
+  const urgentCount =
+    m?.priorityCounts?.urgent ??
+    items.filter((rfi) => rfi.priority === "urgent").length;
   const totalCount = m?.total ?? items.length;
+  const overdueCount = m?.overdueOpen ?? 0;
   const answeredRate = totalCount
     ? Math.round((answeredCount / totalCount) * 100)
     : 0;
+  const avgResponseHours = m?.avgFirstResponseHours
+    ? Math.round(m.avgFirstResponseHours)
+    : null;
 
-  const avgCycle = m?.avgFirstResponseHours
-    ? Math.round(m.avgFirstResponseHours / 24)
-    : 0;
-
-  const dueSoon = items
+  // At-risk RFIs (due within 5 days)
+  const atRiskRfis = items
     .filter((rfi) => {
-      if (!rfi.due_date) return false;
+      if (!rfi.due_date || rfi.status === "closed") return false;
       const days = dayjs(rfi.due_date).diff(dayjs(), "day");
-      return days <= 5 && rfi.status !== "closed";
+      return days <= 5 && days >= 0;
     })
-    .slice(0, 4);
+    .slice(0, 5);
 
-  const recentActivity = items.slice(0, 4);
+  // Overdue RFIs
+  const overdueRfis = items
+    .filter((rfi) => rfi.days_overdue > 0 && rfi.status !== "closed")
+    .slice(0, 5);
 
-  const heroSignals = [
-    { label: "Live Issue Feed", value: `${dueSoon.length || 0} alerts` },
-    { label: "Ball-in-Court SLA", value: `${openCount || 0} owners` },
-    {
-      label: "Design + Field Sync",
-      value: `${recentActivity.length || 0} updates`,
-    },
-  ];
-
-  const heroMetrics = [
-    {
-      label: "Open RFIs",
-      value: openCount,
-      caption: "Active queue",
-    },
-    {
-      label: "Answered Rate",
-      value: `${answeredRate}%`,
-      caption: "This week",
-    },
-    {
-      label: "Avg Cycle (days)",
-      value: avgCycle || "—",
-      caption: "Close-out pace",
-    },
-    {
-      label: "Urgent Queue",
-      value: urgentCount,
-      caption: "Needs <24h",
-    },
-  ];
-
+  // No project selected state
   if (!projectId) {
     return (
-      <Card className="panel-card" bordered={false} title="RFIs">
-        <p style={{ color: "var(--neutral-600)", marginBottom: 12 }}>
-          Select an active project to view RFIs.
-        </p>
-        <Button type="primary" onClick={() => navigate("/projects")}>
-          Go to Projects
-        </Button>
-      </Card>
+      <div className="rfi-dashboard">
+        <div className="empty-project-state">
+          <InboxOutlined className="empty-icon" />
+          <h2>No Project Selected</h2>
+          <p>Select an active project to view and manage RFIs.</p>
+          <Button
+            type="primary"
+            size="large"
+            onClick={() => navigate("/projects")}
+          >
+            Go to Projects
+          </Button>
+        </div>
+      </div>
     );
   }
 
   return (
-    <div>
-      <div className="hero-grid">
-        <section className="hero-grid__primary">
-          <p className="hero-grid__eyebrow">
-            Live RFI Signal · {project?.name || `Project #${projectId}`}
-          </p>
-          <h2 className="hero-grid__title">
-            Precision workflow for project clarity.
-          </h2>
-          <p className="hero-grid__lead">
-            Track every clarification, ball-in-court handoff, and urgent design
-            decision inside a single command surface built for operations and
-            field teams.
-          </p>
-          <div className="hero-cta-row">
-            <Button
-              type="primary"
-              size="large"
-              icon={<PlusOutlined />}
-              onClick={() => setCreateModalVisible(true)}
-            >
-              Create RFI
-            </Button>
-            <span className="hero-chip hero-chip--badge">
-              Project #{projectId || "—"}
-            </span>
-            <span className="hero-chip hero-chip--badge">
-              Ops + Field Alignment
-            </span>
-            <span className="hero-chip hero-chip--alert">
-              {urgentCount} urgent
-            </span>
+    <div className="rfi-dashboard">
+      {/* Page Header */}
+      <header className="page-header">
+        <div className="page-header__left">
+          <h1 className="page-title">
+            <FileTextOutlined className="page-title-icon" />
+            RFI Dashboard
+          </h1>
+          <span className="page-subtitle">
+            {project?.name || `Project #${projectId}`}
+          </span>
+        </div>
+        <div className="page-header__right">
+          <Button
+            type="primary"
+            size="large"
+            icon={<PlusOutlined />}
+            onClick={() => setCreateModalVisible(true)}
+            className="btn-create"
+          >
+            New RFI
+          </Button>
+        </div>
+      </header>
+
+      {/* Stats Row */}
+      <div className="stats-row">
+        <div className="stat-box stat-box--open">
+          <div className="stat-box__icon">
+            <ClockCircleOutlined />
           </div>
-          <div className="hero-metric-grid">
-            {heroMetrics.map((metric) => (
-              <div className="metric-tile" key={metric.label}>
-                <span>{metric.label}</span>
-                <strong>{metric.value}</strong>
-                <small>{metric.caption}</small>
-              </div>
-            ))}
+          <div className="stat-box__data">
+            <span className="stat-box__value">{openCount}</span>
+            <span className="stat-box__label">Open</span>
           </div>
-        </section>
-        <aside className="hero-grid__secondary">
-          <Card className="panel-card" title="Aging & SLA" bordered={false}>
-            <div
-              className="hero-metric-grid"
-              style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}
-            >
-              <div className="metric-tile">
-                <span>Open Overdue</span>
-                <strong>{m?.overdueOpen ?? 0}</strong>
-                <small>Past due date</small>
-              </div>
-              <div className="metric-tile">
-                <span>Avg First Response</span>
-                <strong>
-                  {m?.avgFirstResponseHours
-                    ? `${Math.round(m.avgFirstResponseHours)}h`
-                    : "—"}
-                </strong>
-                <small>Hours to first reply</small>
-              </div>
-              <div className="metric-tile">
-                <span>0-3 days</span>
-                <strong>{m?.agingBuckets?.le3 ?? 0}</strong>
-                <small>Fresh open items</small>
-              </div>
-              <div className="metric-tile">
-                <span>4-7 days</span>
-                <strong>{m?.agingBuckets?.btw4_7 ?? 0}</strong>
-                <small>Aging watchlist</small>
-              </div>
-              <div className="metric-tile">
-                <span>{">"}7 days</span>
-                <strong>{m?.agingBuckets?.gt7 ?? 0}</strong>
-                <small>Escalate to close</small>
-              </div>
-            </div>
-          </Card>
-          <Card className="hero-insight-card" bordered={false}>
-            <div className="hero-insight-card__tabs">
-              <span className="insight-tab insight-tab--active">
-                Live Signal
-              </span>
-              <span className="insight-tab">Ball-in-Court</span>
-              <span className="insight-tab">Design Sync</span>
-            </div>
-            <div className="hero-card__section">
-              <Statistic
-                title="Answer Confidence"
-                value={answeredRate}
-                suffix="%"
-              />
-              <Statistic
-                title="Avg Cycle"
-                value={avgCycle || 0}
-                suffix=" days"
-              />
-            </div>
-            <div className="hero-progress">
+        </div>
+
+        <div className="stat-box stat-box--answered">
+          <div className="stat-box__icon">
+            <CheckCircleOutlined />
+          </div>
+          <div className="stat-box__data">
+            <span className="stat-box__value">{answeredCount}</span>
+            <span className="stat-box__label">Answered</span>
+          </div>
+        </div>
+
+        <div className="stat-box stat-box--closed">
+          <div className="stat-box__icon">
+            <CheckCircleOutlined />
+          </div>
+          <div className="stat-box__data">
+            <span className="stat-box__value">{closedCount}</span>
+            <span className="stat-box__label">Closed</span>
+          </div>
+        </div>
+
+        <div className="stat-box stat-box--urgent">
+          <div className="stat-box__icon">
+            <FireOutlined />
+          </div>
+          <div className="stat-box__data">
+            <span className="stat-box__value">{urgentCount}</span>
+            <span className="stat-box__label">Urgent</span>
+          </div>
+        </div>
+
+        <div className="stat-box stat-box--overdue">
+          <div className="stat-box__icon">
+            <WarningOutlined />
+          </div>
+          <div className="stat-box__data">
+            <span className="stat-box__value">{overdueCount}</span>
+            <span className="stat-box__label">Overdue</span>
+          </div>
+        </div>
+
+        <div className="stat-box stat-box--total">
+          <div className="stat-box__icon">
+            <FileTextOutlined />
+          </div>
+          <div className="stat-box__data">
+            <span className="stat-box__value">{totalCount}</span>
+            <span className="stat-box__label">Total</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Progress & Insights Row */}
+      <div className="insights-row">
+        <Card className="insight-card" bordered={false}>
+          <div className="insight-card__header">
+            <ThunderboltOutlined className="insight-icon" />
+            <span>Response Rate</span>
+          </div>
+          <div className="insight-card__body">
+            <div className="progress-ring">
               <Progress
+                type="circle"
                 percent={answeredRate}
-                showInfo={false}
-                strokeColor="#2563eb"
+                size={100}
+                strokeColor={{
+                  "0%": "#1e3a5f",
+                  "100%": "#0ea5e9",
+                }}
+                format={(percent) => (
+                  <span className="progress-value">{percent}%</span>
+                )}
               />
-              <div className="hero-progress__meta">
-                <span>Goal 85%</span>
-                <span>{answeredRate}%</span>
-              </div>
             </div>
-            <div className="hero-feed">
-              {heroSignals.map((signal) => (
-                <div className="hero-feed__item" key={signal.label}>
-                  <span className="hero-feed__label">{signal.label}</span>
-                  <span className="hero-feed__value">{signal.value}</span>
-                </div>
-              ))}
+            <div className="progress-meta">
+              <span className="progress-label">Answered / Total</span>
+              <span className="progress-detail">
+                {answeredCount} of {totalCount} RFIs
+              </span>
             </div>
-          </Card>
-        </aside>
+          </div>
+        </Card>
+
+        <Card className="insight-card" bordered={false}>
+          <div className="insight-card__header">
+            <ClockCircleOutlined className="insight-icon" />
+            <span>Avg Response Time</span>
+          </div>
+          <div className="insight-card__body insight-card__body--centered">
+            <div className="big-stat">
+              <span className="big-stat__value">{avgResponseHours ?? "—"}</span>
+              <span className="big-stat__unit">hours</span>
+            </div>
+            <span className="big-stat__label">to first response</span>
+          </div>
+        </Card>
+
+        <Card className="insight-card insight-card--warning" bordered={false}>
+          <div className="insight-card__header">
+            <WarningOutlined className="insight-icon" />
+            <span>At Risk</span>
+            <Tag color="orange" className="insight-tag">
+              {atRiskRfis.length}
+            </Tag>
+          </div>
+          <div className="insight-card__body">
+            {atRiskRfis.length === 0 ? (
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description="No at-risk RFIs"
+              />
+            ) : (
+              <ul className="risk-list">
+                {atRiskRfis.map((rfi) => (
+                  <li key={rfi.id} className="risk-list__item">
+                    <span className="risk-rfi-number">RFI-{rfi.number}</span>
+                    <span className="risk-rfi-title">{rfi.title}</span>
+                    <Tooltip
+                      title={`Due ${dayjs(rfi.due_date).format("MMM D")}`}
+                    >
+                      <span className="risk-due">
+                        <CalendarOutlined />{" "}
+                        {dayjs(rfi.due_date).diff(dayjs(), "day")}d
+                      </span>
+                    </Tooltip>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </Card>
+
+        <Card className="insight-card insight-card--danger" bordered={false}>
+          <div className="insight-card__header">
+            <ExclamationCircleOutlined className="insight-icon" />
+            <span>Overdue</span>
+            <Tag color="red" className="insight-tag">
+              {overdueRfis.length}
+            </Tag>
+          </div>
+          <div className="insight-card__body">
+            {overdueRfis.length === 0 ? (
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description="No overdue RFIs"
+              />
+            ) : (
+              <ul className="risk-list">
+                {overdueRfis.map((rfi) => (
+                  <li
+                    key={rfi.id}
+                    className="risk-list__item risk-list__item--overdue"
+                  >
+                    <span className="risk-rfi-number">RFI-{rfi.number}</span>
+                    <span className="risk-rfi-title">{rfi.title}</span>
+                    <span className="risk-overdue">
+                      <WarningOutlined /> {rfi.days_overdue}d late
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </Card>
       </div>
 
-      <div className="stat-grid">
-        <div className="stat-grid__item">
-          <div className="stat-grid__label">Total Active</div>
-          <div className="stat-grid__value">{totalCount}</div>
-          <small style={{ color: "var(--brand-muted)" }}>
-            Includes open + answered pending close
-          </small>
-        </div>
-        <div className="stat-grid__item">
-          <div className="stat-grid__label">Answered</div>
-          <div className="stat-grid__value">{answeredCount}</div>
-          <small style={{ color: "var(--brand-muted)" }}>
-            Awaiting close-out confirmation
-          </small>
-        </div>
-        <div className="stat-grid__item">
-          <div className="stat-grid__label">Closed</div>
-          <div className="stat-grid__value">{closedCount}</div>
-          <small style={{ color: "var(--brand-muted)" }}>
-            Fully resolved and archived
-          </small>
-        </div>
-        <div className="stat-grid__item">
-          <div className="stat-grid__label">Urgent</div>
-          <div className="stat-grid__value">{urgentCount}</div>
-          <small style={{ color: "var(--brand-muted)" }}>
-            Requires response in &lt;24 hrs
-          </small>
-        </div>
-      </div>
-
+      {/* Filters */}
       <RfiFilters />
 
-      <Row gutter={24} wrap>
-        <Col xs={24} lg={16} style={{ marginBottom: "1.5rem" }}>
-          <RfiList />
-        </Col>
-        <Col
-          xs={24}
-          lg={8}
-          style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}
-        >
-          <Card
-            className="panel-card"
-            title="At-Risk Deadlines"
-            extra={<Tag color="red">Due &lt; 5 days</Tag>}
-            bordered={false}
-          >
-            <List
-              className="at-risk-list"
-              dataSource={dueSoon}
-              locale={{ emptyText: "No upcoming risk windows" }}
-              renderItem={(rfi) => (
-                <List.Item>
-                  <List.Item.Meta
-                    title={`RFI-${rfi.number} · ${rfi.title}`}
-                    description={
-                      <div className="rfi-detail-meta">
-                        <span>Due {dayjs(rfi.due_date).format("DD MMM")}</span>
-                        <span>
-                          Ball in court: {rfi.ball_in_court_first_name}
-                        </span>
-                      </div>
-                    }
-                  />
-                  <Tag color="volcano">{rfi.priority}</Tag>
-                </List.Item>
-              )}
-            />
-          </Card>
+      {/* RFI Table */}
+      <RfiList />
 
-          <Card
-            className="panel-card"
-            title="Recent Activity"
-            extra={<Tag color="geekblue">Chronology</Tag>}
-            bordered={false}
-          >
-            <List
-              dataSource={recentActivity}
-              locale={{ emptyText: "No RFIs loaded" }}
-              renderItem={(rfi) => (
-                <List.Item>
-                  <List.Item.Meta
-                    title={rfi.title}
-                    description={`Updated ${dayjs(rfi.updated_at).format(
-                      "DD MMM, HH:mm"
-                    )}`}
-                  />
-                  <span
-                    className={`status-pill status-pill--${
-                      rfi.status || "open"
-                    }`}
-                  >
-                    {rfi.status}
-                  </span>
-                </List.Item>
-              )}
-            />
-          </Card>
-        </Col>
-      </Row>
-
+      {/* Create Modal */}
       <RfiCreateModal
         visible={createModalVisible}
         onClose={() => setCreateModalVisible(false)}

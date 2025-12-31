@@ -1,5 +1,5 @@
 import React from "react";
-import { Layout, Menu, Button, Typography, Select } from "antd";
+import { Layout, Menu, Button, Typography, Select, Tooltip, Badge } from "antd";
 import {
   FundProjectionScreenOutlined,
   ApartmentOutlined,
@@ -10,6 +10,10 @@ import {
   TeamOutlined,
   FileTextOutlined,
   PlusCircleOutlined,
+  LogoutOutlined,
+  CheckCircleOutlined,
+  SyncOutlined,
+  ThunderboltOutlined,
 } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -72,7 +76,9 @@ const LayoutShell = ({ children }) => {
         <div className="header-container">
           <div className="header-primary">
             <div className="brand-cluster">
-              <div className="brand-emblem">PC</div>
+              <div className="brand-emblem">
+                <ThunderboltOutlined />
+              </div>
               <div className="brand-meta">
                 <Text className="brand-title">Procore Console</Text>
                 <span className="brand-subtitle">Enterprise RFI Hub</span>
@@ -93,19 +99,32 @@ const LayoutShell = ({ children }) => {
               }}
             />
             <div className="action-cluster">
-              <Button icon={<FileTextOutlined />}>Reports</Button>
-              <Button type="primary" icon={<PlusCircleOutlined />}>
+              <Tooltip title="View Reports">
+                <Button icon={<FileTextOutlined />} className="action-btn">
+                  Reports
+                </Button>
+              </Tooltip>
+              <Button
+                type="primary"
+                icon={<PlusCircleOutlined />}
+                className="btn-create-rfi"
+              >
                 New RFI
               </Button>
               <NotificationDropdown />
-              {user && <div className="user-avatar">{initials || "--"}</div>}
-              <Button
-                type="text"
-                onClick={() => dispatch(logout())}
-                className="logout-btn"
+              <Tooltip
+                title={user ? `${user.firstName} ${user.lastName}` : "User"}
               >
-                Logout
-              </Button>
+                <div className="user-avatar">{initials || "--"}</div>
+              </Tooltip>
+              <Tooltip title="Sign Out">
+                <Button
+                  type="text"
+                  icon={<LogoutOutlined />}
+                  onClick={() => dispatch(logout())}
+                  className="logout-btn"
+                />
+              </Tooltip>
             </div>
           </div>
           <div className="header-context">
@@ -135,8 +154,13 @@ const LayoutShell = ({ children }) => {
               </span>
             </div>
             <div className="status-indicators">
-              <span className="status-dot status-dot--live">Live</span>
-              <span className="status-dot status-dot--sync">Synced</span>
+              <Badge status="processing" />
+              <span className="status-dot status-dot--live">
+                <CheckCircleOutlined /> Live
+              </span>
+              <span className="status-dot status-dot--sync">
+                <SyncOutlined spin /> Synced
+              </span>
             </div>
           </div>
         </div>

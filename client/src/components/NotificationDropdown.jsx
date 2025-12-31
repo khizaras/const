@@ -1,6 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { Dropdown, List, Badge, Button, Typography, Empty, Spin } from "antd";
-import { BellOutlined, CheckOutlined } from "@ant-design/icons";
+import {
+  Dropdown,
+  List,
+  Badge,
+  Button,
+  Typography,
+  Empty,
+  Spin,
+  Tooltip,
+} from "antd";
+import {
+  BellOutlined,
+  CheckOutlined,
+  ClockCircleOutlined,
+} from "@ant-design/icons";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import apiClient from "../services/apiClient";
@@ -14,6 +27,13 @@ const typeLabels = {
   rfi_assigned: "RFI Assigned",
   rfi_status: "RFI Status Changed",
   rfi_response: "RFI Response",
+};
+
+const typeIcons = {
+  rfi_created: "🆕",
+  rfi_assigned: "👤",
+  rfi_status: "🔄",
+  rfi_response: "💬",
 };
 
 const NotificationDropdown = () => {
@@ -62,16 +82,9 @@ const NotificationDropdown = () => {
   };
 
   const content = (
-    <div style={{ width: 340, maxHeight: 400, overflowY: "auto", padding: 8 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 8,
-        }}
-      >
-        <Text strong>Notifications</Text>
+    <div className="notification-dropdown">
+      <div className="notification-header">
+        <h4>Notifications</h4>
         {unreadCount > 0 && (
           <Button
             size="small"
@@ -84,41 +97,45 @@ const NotificationDropdown = () => {
         )}
       </div>
       {loading ? (
-        <div style={{ textAlign: "center", padding: 24 }}>
+        <div className="notification-loading">
           <Spin />
         </div>
       ) : notifications.length === 0 ? (
-        <Empty
-          description="No notifications"
-          image={Empty.PRESENTED_IMAGE_SIMPLE}
-        />
+        <div className="notification-empty">
+          <Empty
+            description="No notifications"
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+          />
+        </div>
       ) : (
         <List
           size="small"
           dataSource={notifications}
           renderItem={(item) => (
             <List.Item
-              style={{
-                background: item.is_read ? "transparent" : "#e6f7ff",
-                padding: "8px 4px",
-                borderRadius: 4,
-                marginBottom: 4,
-                cursor: "pointer",
-              }}
+              className={`notification-item ${
+                !item.is_read ? "notification-item--unread" : ""
+              }`}
               onClick={() => handleMarkRead(item.id)}
             >
               <List.Item.Meta
+                avatar={
+                  <span className="notification-icon">
+                    {typeIcons[item.type] || "📌"}
+                  </span>
+                }
                 title={
-                  <Text strong={!item.is_read}>
+                  <span className="notification-title">
                     {typeLabels[item.type] || item.type}
-                  </Text>
+                  </span>
                 }
                 description={
-                  <div style={{ fontSize: 12 }}>
+                  <div className="notification-body">
                     {item.payload?.title && <div>{item.payload.title}</div>}
-                    <Text type="secondary">
+                    <span className="notification-time">
+                      <ClockCircleOutlined />
                       {dayjs(item.created_at).fromNow()}
-                    </Text>
+                    </span>
                   </div>
                 }
               />
@@ -140,9 +157,15 @@ const NotificationDropdown = () => {
       dropdownRender={() => content}
       placement="bottomRight"
     >
-      <Badge count={unreadCount} size="small" offset={[-2, 6]}>
-        <Button shape="circle" icon={<BellOutlined />} />
-      </Badge>
+      <Tooltip title="Notifications">
+        <Badge count={unreadCount} size="small" offset={[-2, 6]}>
+          <Button
+            shape="circle"
+            icon={<BellOutlined />}
+            className="notification-trigger"
+          />
+        </Badge>
+      </Tooltip>
     </Dropdown>
   );
 };

@@ -107,7 +107,7 @@ const DocumentsDashboard = () => {
   }
 
   return (
-    <div>
+    <div className="page-container">
       <Card
         className="panel-card table-card"
         bordered={false}

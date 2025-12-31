@@ -19,6 +19,8 @@ import {
   Select,
   Popconfirm,
   Timeline,
+  Badge,
+  Tooltip,
 } from "antd";
 import {
   DownloadOutlined,
@@ -32,6 +34,17 @@ import {
   FileImageOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
+  InfoCircleOutlined,
+  UserOutlined,
+  CalendarOutlined,
+  TagOutlined,
+  ClockCircleOutlined,
+  TeamOutlined,
+  FileTextOutlined,
+  ExclamationCircleOutlined,
+  HistoryOutlined,
+  MessageOutlined,
+  LinkOutlined,
 } from "@ant-design/icons";
 import RfiWorkflowStepper from "./RfiWorkflowStepper";
 import dayjs from "dayjs";
@@ -372,9 +385,12 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
     return (
       <Drawer
         title={
-          <Title level={3} style={{ margin: 0 }}>
-            RFI Details
-          </Title>
+          <div className="drawer-title-skeleton">
+            <FileTextOutlined className="drawer-title-icon" />
+            <Title level={3} style={{ margin: 0 }}>
+              RFI Details
+            </Title>
+          </div>
         }
         open={visible}
         onClose={onClose}
@@ -382,26 +398,21 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
         height="100vh"
         placement="right"
         closeIcon={<CloseOutlined style={{ fontSize: 18 }} />}
-        bodyStyle={{
-          paddingTop: 24,
-          background: "#f5f5f5",
-        }}
-        headerStyle={{
-          borderBottom: "1px solid #e8e8e8",
-          padding: "20px 24px",
+        className="rfi-detail-drawer"
+        styles={{
+          body: {
+            paddingTop: 24,
+            background: "var(--neutral-100)",
+          },
+          header: {
+            borderBottom: "1px solid var(--neutral-200)",
+            padding: "20px 24px",
+            background: "var(--bg-surface)",
+          },
         }}
       >
-        <div
-          style={{
-            maxWidth: 900,
-            margin: "0 auto",
-            background: "white",
-            padding: "32px",
-            borderRadius: "8px",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-          }}
-        >
-          Loading...
+        <div className="drawer-content-loading">
+          <div className="loading-shimmer" />
         </div>
       </Drawer>
     );
@@ -411,22 +422,21 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
     <>
       <Drawer
         title={
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              width: "100%",
-            }}
-          >
-            <Space>
-              <Title level={3} style={{ margin: 0 }}>
-                RFI-{rfi.number}
-              </Title>
-              <Tag color={getStatusColor(rfi.status)}>{rfi.status}</Tag>
-              <Tag color={getPriorityColor(rfi.priority)}>{rfi.priority}</Tag>
-            </Space>
-            <Space>
+          <div className="drawer-header">
+            <div className="drawer-header__primary">
+              <Badge.Ribbon
+                text={rfi.priority}
+                color={getPriorityColor(rfi.priority)}
+              >
+                <div className="drawer-header__title-wrap">
+                  <span className="rfi-number-badge">RFI-{rfi.number}</span>
+                  <span className={`status-pill status-pill--${rfi.status}`}>
+                    {rfi.status}
+                  </span>
+                </div>
+              </Badge.Ribbon>
+            </div>
+            <Space className="drawer-header__actions">
               {rfi.status === "open" && (
                 <Popconfirm
                   title="Mark as Answered?"
@@ -439,6 +449,7 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
                     type="primary"
                     icon={<CheckCircleOutlined />}
                     size="small"
+                    className="btn-action btn-action--success"
                   >
                     Mark Answered
                   </Button>
@@ -456,6 +467,7 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
                     type="primary"
                     icon={<CloseCircleOutlined />}
                     size="small"
+                    className="btn-action btn-action--close"
                   >
                     Close RFI
                   </Button>
@@ -478,7 +490,11 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
                   okText="Yes"
                   cancelText="No"
                 >
-                  <Button danger size="small">
+                  <Button
+                    danger
+                    size="small"
+                    className="btn-action btn-action--void"
+                  >
                     Void RFI
                   </Button>
                 </Popconfirm>
@@ -488,6 +504,7 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
                   type="default"
                   size="small"
                   onClick={() => handleStatusChange("open")}
+                  className="btn-action btn-action--reopen"
                 >
                   Reopen
                 </Button>
@@ -501,55 +518,91 @@ const RfiDetailModal = ({ visible, rfiId, onClose }) => {
         height="100vh"
         placement="right"
         closeIcon={<CloseOutlined style={{ fontSize: 18 }} />}
-        bodyStyle={{
-          paddingTop: 24,
-          background: "#f5f5f5",
-        }}
-        headerStyle={{
-          borderBottom: "1px solid #e8e8e8",
-          padding: "20px 24px",
+        className="rfi-detail-drawer"
+        styles={{
+          body: {
+            paddingTop: 24,
+            background: "var(--neutral-100)",
+          },
+          header: {
+            borderBottom: "1px solid var(--neutral-200)",
+            padding: "20px 24px",
+            background: "var(--bg-surface)",
+          },
         }}
         footer={null}
         destroyOnClose
       >
-        <div
-          style={{
-            maxWidth: 900,
-            margin: "0 auto",
-            background: "white",
-            padding: "32px",
-            borderRadius: "8px",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-          }}
-        >
-          <div style={{ maxHeight: "70vh", overflowY: "auto" }}>
+        <div className="drawer-content-container">
+          <div className="drawer-scroll-area">
             <RfiWorkflowStepper
               projectId={projectId}
               rfiId={rfiId}
               currentStatus={rfi.status}
               onStatusChange={() => loadRfiDetail()}
             />
-            <Title level={4}>{rfi.title}</Title>
+
+            <div className="rfi-detail-title-section">
+              <Title level={4} className="rfi-detail-title">
+                {rfi.title}
+              </Title>
+            </div>
 
             <Descriptions
               column={2}
               bordered
               size="small"
-              style={{ marginBottom: 24 }}
+              className="rfi-descriptions"
             >
-              <Descriptions.Item label="Status">
-                <Tag color={getStatusColor(rfi.status)}>{rfi.status}</Tag>
+              <Descriptions.Item
+                label={
+                  <>
+                    <TagOutlined /> Status
+                  </>
+                }
+              >
+                <span className={`status-pill status-pill--${rfi.status}`}>
+                  {rfi.status}
+                </span>
               </Descriptions.Item>
-              <Descriptions.Item label="Priority">
-                <Tag color={getPriorityColor(rfi.priority)}>{rfi.priority}</Tag>
+              <Descriptions.Item
+                label={
+                  <>
+                    <ExclamationCircleOutlined /> Priority
+                  </>
+                }
+              >
+                <span
+                  className={`priority-pill priority-pill--${rfi.priority}`}
+                >
+                  {rfi.priority}
+                </span>
               </Descriptions.Item>
-              <Descriptions.Item label="Created By">
+              <Descriptions.Item
+                label={
+                  <>
+                    <UserOutlined /> Created By
+                  </>
+                }
+              >
                 {rfi.created_by_first_name} {rfi.created_by_last_name}
               </Descriptions.Item>
-              <Descriptions.Item label="Created">
+              <Descriptions.Item
+                label={
+                  <>
+                    <CalendarOutlined /> Created
+                  </>
+                }
+              >
                 {dayjs(rfi.created_at).format("MMM D, YYYY h:mm A")}
               </Descriptions.Item>
-              <Descriptions.Item label="Age">
+              <Descriptions.Item
+                label={
+                  <>
+                    <ClockCircleOutlined /> Age
+                  </>
+                }
+              >
                 <Space>
                   <Text>{rfi.days_open} days open</Text>
                   {rfi.days_overdue > 0 && (

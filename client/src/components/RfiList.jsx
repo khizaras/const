@@ -1,9 +1,13 @@
 import React, { useMemo, useState } from "react";
-import { Card, Table, Tag, Typography, Tooltip } from "antd";
+import { Card, Table, Tag, Typography, Tooltip, Badge, Space } from "antd";
 import {
   ClockCircleOutlined,
   ExclamationCircleOutlined,
   WarningOutlined,
+  CheckCircleOutlined,
+  FileTextOutlined,
+  UserOutlined,
+  CalendarOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useSelector } from "react-redux";
@@ -181,11 +185,17 @@ const RfiList = () => {
       <Card
         className="panel-card table-card"
         bordered={false}
-        title="RFI Register"
-        extra={
-          <span style={{ color: "var(--brand-muted)" }}>
-            {meta.total} active records
+        title={
+          <span className="panel-title">
+            <FileTextOutlined className="panel-title-icon" />
+            RFI Register
           </span>
+        }
+        extra={
+          <Space>
+            <Badge status="processing" />
+            <span className="panel-meta">{meta.total} active records</span>
+          </Space>
         }
       >
         <Table
@@ -195,8 +205,16 @@ const RfiList = () => {
           loading={status === "loading"}
           pagination={false}
           bordered={false}
+          className="rfi-table"
           onRow={(record) => ({
             onClick: () => handleRowClick(record),
+            className: `rfi-row rfi-row--${record.status || "open"} ${
+              record.days_overdue > 0 ? "rfi-row--overdue" : ""
+            } ${
+              record.days_until_due <= 2 && record.days_until_due >= 0
+                ? "rfi-row--at-risk"
+                : ""
+            }`,
             style: { cursor: "pointer" },
           })}
         />
