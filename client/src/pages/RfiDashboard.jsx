@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Card, Progress, Tag, Button, Tooltip, Empty } from "antd";
+import { Card, Progress, Tag, Button, Tooltip, Empty, message } from "antd";
 import {
   PlusOutlined,
   ClockCircleOutlined,
@@ -11,6 +11,7 @@ import {
   WarningOutlined,
   InboxOutlined,
   ThunderboltOutlined,
+  DownloadOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useDispatch, useSelector } from "react-redux";
@@ -19,6 +20,7 @@ import RfiFilters from "../components/RfiFilters";
 import RfiList from "../components/RfiList";
 import RfiCreateModal from "../components/RfiCreateModal";
 import { fetchRfis, fetchRfiMetrics } from "../features/rfis/rfiSlice";
+import apiClient from "../services/apiClient";
 
 const RfiDashboard = () => {
   const navigate = useNavigate();
@@ -38,6 +40,29 @@ const RfiDashboard = () => {
     if (!projectId) return;
     dispatch(fetchRfis());
     dispatch(fetchRfiMetrics());
+  };
+
+  const handleExportCSV = async () => {
+    if (!projectId) return;
+    try {
+      const response = await apiClient.get(
+        `/projects/${projectId}/rfis/export/csv`,
+        { responseType: "blob" }
+      );
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `rfis_${projectId}_${new Date().toISOString().split("T")[0]}.csv`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      message.success("RFIs exported successfully");
+    } catch (error) {
+      message.error("Failed to export RFIs");
+    }
   };
 
   // Calculate metrics
@@ -111,6 +136,13 @@ const RfiDashboard = () => {
           </span>
         </div>
         <div className="page-header__right">
+          <Button
+            icon={<DownloadOutlined />}
+            onClick={handleExportCSV}
+            style={{ marginRight: "12px" }}
+          >
+            Export CSV
+          </Button>
           <Button
             type="primary"
             size="large"

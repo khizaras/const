@@ -58,6 +58,7 @@ const IssuesDashboard = () => {
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState(null);
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [users, setUsers] = useState([]);
   const [form] = Form.useForm();
   const [detailForm] = Form.useForm();
@@ -278,6 +279,43 @@ const IssuesDashboard = () => {
     }
   };
 
+  const handleBulkClose = async () => {
+    if (!projectId || selectedRowKeys.length === 0) return;
+    try {
+      await apiClient.post(`/projects/${projectId}/issues/bulk-close`, {
+        issueIds: selectedRowKeys,
+      });
+      message.success(`Closed ${selectedRowKeys.length} issue(s)`);
+      setSelectedRowKeys([]);
+      loadIssues();
+    } catch (error) {
+      message.error("Failed to close issues");
+    }
+  };
+
+  const handleExportCSV = async () => {
+    if (!projectId) return;
+    try {
+      const response = await apiClient.get(
+        `/projects/${projectId}/issues/export/csv`,
+        { responseType: "blob" }
+      );
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `issues_${projectId}_${new Date().toISOString().split("T")[0]}.csv`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      message.success("Issues exported successfully");
+    } catch (error) {
+      message.error("Failed to export issues");
+    }
+  };
+
   if (!projectId) {
     return (
       <Card className="panel-card" bordered={false} title="Issues & Punch">
@@ -306,13 +344,26 @@ const IssuesDashboard = () => {
         bordered={false}
         title="Issues & Punch"
         extra={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setCreateOpen(true)}
-          >
-            New Issue
-          </Button>
+          <Space>
+            {selectedRowKeys.length > 0 && (
+              <Button
+                onClick={handleBulkClose}
+                disabled={selectedRowKeys.length === 0}
+              >
+                Close {selectedRowKeys.length} Selected
+              </Button>
+            )}
+            <Button icon={<DownloadOutlined />} onClick={handleExportCSV}>
+              Export CSV
+            </Button>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setCreateOpen(true)}
+            >
+              New Issue
+            </Button>
+          </Space>
         }
       >
         <Table
@@ -320,6 +371,10 @@ const IssuesDashboard = () => {
           columns={columns}
           dataSource={items}
           loading={loading}
+          rowSelection={{
+            selectedRowKeys,
+            onChange: (keys) => setSelectedRowKeys(keys),
+          }}
           onRow={(record) => ({
             onClick: () => openDetail(record),
           })}
