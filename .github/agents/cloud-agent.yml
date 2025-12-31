@@ -6,7 +6,7 @@ version: 1.0.0
 delegation:
   enabled: true
   mode: cloud
-  
+
 # Cloud agent configuration
 cloud:
   provider: github-copilot
@@ -16,7 +16,7 @@ cloud:
     - testing
     - documentation
     - refactoring
-  
+
 # Agent behavior
 behavior:
   auto_delegate: true
@@ -26,7 +26,7 @@ behavior:
 # Resource limits
 resources:
   max_concurrent_tasks: 5  # Maximum number of parallel cloud agent tasks
-  timeout_seconds: 300      # Task timeout (5 minutes) - tasks exceeding this are terminated
+  timeout_seconds: 300      # Task timeout in seconds - tasks exceeding this are terminated
   
 # Security settings
 security:
