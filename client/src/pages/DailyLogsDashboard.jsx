@@ -271,6 +271,29 @@ const DailyLogsDashboard = () => {
     }
   };
 
+  const handleExportCSV = async () => {
+    if (!projectId) return;
+    try {
+      const response = await apiClient.get(
+        `/projects/${projectId}/daily-logs/export/csv`,
+        { responseType: "blob" }
+      );
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `daily_logs_${projectId}_${new Date().toISOString().split("T")[0]}.csv`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      message.success("Daily logs exported successfully");
+    } catch (error) {
+      message.error("Failed to export daily logs");
+    }
+  };
+
   if (!projectId) {
     return (
       <Card className="panel-card" bordered={false} title="Daily Logs">
@@ -291,13 +314,18 @@ const DailyLogsDashboard = () => {
         bordered={false}
         title="Daily Logs"
         extra={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setCreateOpen(true)}
-          >
-            New Daily Log
-          </Button>
+          <Space>
+            <Button icon={<DownloadOutlined />} onClick={handleExportCSV}>
+              Export CSV
+            </Button>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setCreateOpen(true)}
+            >
+              New Daily Log
+            </Button>
+          </Space>
         }
       >
         <Table

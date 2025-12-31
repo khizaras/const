@@ -9,6 +9,7 @@ import DocumentsDashboard from "./pages/DocumentsDashboard";
 import DailyLogsDashboard from "./pages/DailyLogsDashboard";
 import ProjectsDashboard from "./pages/ProjectsDashboard";
 import TeamsDashboard from "./pages/TeamsDashboard";
+import ReportsDashboard from "./pages/ReportsDashboard";
 import SetupInstaller from "./pages/SetupInstaller";
 import LayoutShell from "./components/LayoutShell";
 import { fetchMe } from "./features/auth/authSlice";
@@ -123,6 +124,16 @@ const App = () => {
             <RequireAuth>
               <LayoutShell>
                 <DailyLogsDashboard />
+              </LayoutShell>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/reports"
+          element={
+            <RequireAuth>
+              <LayoutShell>
+                <ReportsDashboard />
               </LayoutShell>
             </RequireAuth>
           }
