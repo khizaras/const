@@ -26,23 +26,23 @@ app.use("/api", apiRouter);
 // Public inbound email webhook (no auth middleware)
 app.use("/webhooks", emailInboundRouter);
 
-// Serve built client in production
-if (process.env.NODE_ENV === "production") {
-  const distPath = path.resolve(__dirname, "..", "..", "dist");
-  app.use(express.static(distPath));
-  app.get("*", (req, res, next) => {
-    if (
-      req.path === "/health" ||
-      req.path.startsWith("/api") ||
-      req.path.startsWith("/webhooks")
-    ) {
-      return next();
-    }
-    res.sendFile(path.join(distPath, "index.html"));
-  });
-}
+// Serve built client from dist folder (both dev and production)
+const distPath = path.resolve(__dirname, "..", "..", "dist");
+app.use(express.static(distPath));
 
-// 404 handler
+// SPA fallback - serve index.html for all non-API routes
+app.get("*", (req, res, next) => {
+  if (
+    req.path === "/health" ||
+    req.path.startsWith("/api") ||
+    req.path.startsWith("/webhooks")
+  ) {
+    return next();
+  }
+  res.sendFile(path.join(distPath, "index.html"));
+});
+
+// 404 handler for API routes only
 app.use((req, res) => {
   res.status(404).json({ error: "Not found" });
 });
