@@ -36,4 +36,30 @@ const update = asyncHandler(async (req, res) => {
   res.json(log);
 });
 
-module.exports = { list, create, detail, update };
+const exportCSV = asyncHandler(async (req, res) => {
+  const { arrayToCSV, setCSVHeaders } = require("../../utils/csvExport");
+  const filters = parseDailyLogListQuery(req.query);
+  const result = await listDailyLogs(req.project.id, filters);
+
+  const columns = [
+    { key: "logDate", label: "Date" },
+    { key: "shift", label: "Shift" },
+    { key: "weather", label: "Weather" },
+    { key: "temperature", label: "Temperature" },
+    { key: "workPerformed", label: "Work Performed" },
+    { key: "safetyNotes", label: "Safety Notes" },
+    { key: "delays", label: "Delays" },
+    { key: "status", label: "Status" },
+    { key: "createdByName", label: "Created By" },
+    { key: "createdAt", label: "Created At" },
+    { key: "updatedAt", label: "Updated At" },
+  ];
+
+  const csv = arrayToCSV(result.data || [], columns);
+  const filename = `daily_logs_project_${req.project.id}_${new Date().toISOString().split("T")[0]}.csv`;
+
+  setCSVHeaders(res, filename);
+  res.send(csv);
+});
+
+module.exports = { list, create, detail, update, exportCSV };

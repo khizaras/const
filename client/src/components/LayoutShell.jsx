@@ -64,6 +64,8 @@ const LayoutShell = ({ children }) => {
     ? "daily-logs"
     : location.pathname.startsWith("/documents")
     ? "documents"
+    : location.pathname.startsWith("/reports")
+    ? "reports"
     : "rfis";
 
   const initials = `${user?.firstName?.[0] ?? ""}${
@@ -100,7 +102,11 @@ const LayoutShell = ({ children }) => {
             />
             <div className="action-cluster">
               <Tooltip title="View Reports">
-                <Button icon={<FileTextOutlined />} className="action-btn">
+                <Button 
+                  icon={<FileTextOutlined />} 
+                  className="action-btn"
+                  onClick={() => navigate("/reports")}
+                >
                   Reports
                 </Button>
               </Tooltip>

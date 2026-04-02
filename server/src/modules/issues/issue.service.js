@@ -218,9 +218,55 @@ const updateIssue = async (projectId, issueId, payload, userId) => {
   return loadIssueDetail(projectId, issueId);
 };
 
+const bulkUpdateIssues = async (projectId, issueIds, payload, userId) => {
+  if (!issueIds || issueIds.length === 0) {
+    throw new AppError("No issue IDs provided", 400);
+  }
+
+  // Verify all issues belong to the project
+  const placeholders = issueIds.map(() => "?").join(",");
+  const [rows] = await pool.execute(
+    `SELECT id FROM issues WHERE project_id = ? AND id IN (${placeholders})`,
+    [projectId, ...issueIds]
+  );
+
+  if (rows.length !== issueIds.length) {
+    throw new AppError("Some issues not found or don't belong to this project", 404);
+  }
+
+  const fields = [];
+  const params = [];
+  const setField = (col, value) => {
+    fields.push(`${col} = ?`);
+    params.push(value);
+  };
+
+  if (payload.status !== undefined) {
+    setField("status", payload.status);
+    if (payload.status === "closed") setField("closed_at", new Date());
+  }
+  if (payload.priority !== undefined) setField("priority", payload.priority);
+  if (payload.assignedToUserId !== undefined) {
+    await ensureProjectUser(projectId, payload.assignedToUserId);
+    setField("assigned_to_user_id", payload.assignedToUserId);
+  }
+
+  if (!fields.length) {
+    return { updated: 0, issueIds };
+  }
+
+  await pool.execute(
+    `UPDATE issues SET ${fields.join(", ")}, updated_at = NOW() WHERE project_id = ? AND id IN (${placeholders})`,
+    [...params, projectId, ...issueIds]
+  );
+
+  return { updated: issueIds.length, issueIds };
+};
+
 module.exports = {
   listIssues,
   createIssue,
   loadIssueDetail,
   updateIssue,
+  bulkUpdateIssues,
 };

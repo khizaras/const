@@ -36,4 +36,49 @@ const update = asyncHandler(async (req, res) => {
   res.json(issue);
 });
 
-module.exports = { list, create, detail, update };
+const bulkClose = asyncHandler(async (req, res) => {
+  const { issueIds } = req.body;
+  if (!Array.isArray(issueIds) || issueIds.length === 0) {
+    return res.status(400).json({ error: "issueIds array is required" });
+  }
+
+  const { bulkUpdateIssues } = require("./issue.service");
+  const result = await bulkUpdateIssues(
+    req.project.id,
+    issueIds,
+    { status: "closed" },
+    req.user.id
+  );
+
+  res.json(result);
+});
+
+const exportCSV = asyncHandler(async (req, res) => {
+  const { arrayToCSV, setCSVHeaders } = require("../../utils/csvExport");
+  const filters = parseListQuery(req.query);
+  const result = await listIssues(req.project.id, filters);
+
+  const columns = [
+    { key: "issueNumber", label: "Issue Number" },
+    { key: "title", label: "Title" },
+    { key: "description", label: "Description" },
+    { key: "type", label: "Type" },
+    { key: "status", label: "Status" },
+    { key: "priority", label: "Priority" },
+    { key: "location", label: "Location" },
+    { key: "trade", label: "Trade" },
+    { key: "assignedToName", label: "Assigned To" },
+    { key: "createdByName", label: "Created By" },
+    { key: "dueDate", label: "Due Date" },
+    { key: "createdAt", label: "Created At" },
+    { key: "updatedAt", label: "Updated At" },
+  ];
+
+  const csv = arrayToCSV(result.data || [], columns);
+  const filename = `issues_project_${req.project.id}_${new Date().toISOString().split("T")[0]}.csv`;
+
+  setCSVHeaders(res, filename);
+  res.send(csv);
+});
+
+module.exports = { list, create, detail, update, bulkClose, exportCSV };

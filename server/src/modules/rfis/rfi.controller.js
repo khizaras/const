@@ -125,6 +125,32 @@ const getSlaStatus = asyncHandler(async (req, res) => {
   res.json(summary);
 });
 
+const exportCSV = asyncHandler(async (req, res) => {
+  const { arrayToCSV, setCSVHeaders } = require("../../utils/csvExport");
+  const filters = parseListQuery(req.query);
+  const result = await listRfis(req.project.id, filters);
+
+  const columns = [
+    { key: "rfiNumber", label: "RFI Number" },
+    { key: "title", label: "Title" },
+    { key: "question", label: "Question" },
+    { key: "status", label: "Status" },
+    { key: "priority", label: "Priority" },
+    { key: "ballInCourt", label: "Ball in Court" },
+    { key: "assignedToName", label: "Assigned To" },
+    { key: "createdByName", label: "Created By" },
+    { key: "dueDate", label: "Due Date" },
+    { key: "createdAt", label: "Created At" },
+    { key: "updatedAt", label: "Updated At" },
+  ];
+
+  const csv = arrayToCSV(result.data || [], columns);
+  const filename = `rfis_project_${req.project.id}_${new Date().toISOString().split("T")[0]}.csv`;
+
+  setCSVHeaders(res, filename);
+  res.send(csv);
+});
+
 module.exports = {
   list,
   create,
@@ -140,4 +166,5 @@ module.exports = {
   auditLogs,
   getWorkflow,
   getSlaStatus,
+  exportCSV,
 };
